@@ -573,7 +573,12 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
 export default function HSPOSPhase2() {
   const [screen, setScreen] = useState("entry");
-  const [primaryModule] = useState("state");
+const validModules = ["state", "identity", "decision", "calibration"];
+const params = new URLSearchParams(window.location.search);
+const moduleFromUrl = params.get("module");
+const [primaryModule] = useState(
+  validModules.includes(moduleFromUrl) ? moduleFromUrl : "state"
+);
   const [activeModule, setActiveModule] = useState(null);
   const [completedModules, setCompletedModules] = useState(() => loadCompletedModules());
 
