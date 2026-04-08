@@ -87,8 +87,15 @@ const MODULES = [
 
 const C = { bg: "#0D0F14", surface: "#13161D", surface2: "#1A1E28", border: "#252A36", text: "#F0F2F8", muted: "#9BA3B5", dim: "#4A5268", gold: "#C9A84C", done: "#4DB87A", doneDim: "#091410", doneBorder: "#0D3020" };
 
-// --- Persistence layer ---
 const STORAGE_KEY = "hspos_phase2_v1";
+const VALID_MODULES = ["state", "identity", "decision", "calibration"];
+
+function getModuleFromUrl() {
+  if (typeof window === "undefined") return "state";
+  const params = new URLSearchParams(window.location.search);
+  const moduleFromUrl = params.get("module");
+  return VALID_MODULES.includes(moduleFromUrl) ? moduleFromUrl : "state";
+}
 
 function loadState() {
   try {
@@ -110,7 +117,7 @@ function saveState(state) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
   } catch (e) {
-    // silent fail — storage may be full or disabled
+    // silent fail
   }
 }
 
@@ -181,28 +188,57 @@ function formatCompletionDate(iso) {
 }
 
 function Btn({ children, onClick, primary, disabled, full, style: extraStyle }) {
-  const handleClick = useCallback((e) => { e.preventDefault(); e.stopPropagation(); if (!disabled && onClick) onClick(); }, [onClick, disabled]);
+  const handleClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && onClick) onClick();
+  }, [onClick, disabled]);
+
   return (
-    <button type="button" onClick={handleClick} style={{
-      width: full ? "100%" : "auto", padding: "14px 28px", border: primary ? "none" : `1px solid ${C.border}`,
-      background: primary ? C.text : "transparent", color: primary ? C.bg : C.muted,
-      fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: "0.05em",
-      textTransform: "uppercase", cursor: disabled ? "default" : "pointer",
-      opacity: disabled ? 0.4 : 1, transition: "all 0.2s", display: "flex",
-      alignItems: "center", justifyContent: "center", gap: 10, ...extraStyle,
-    }}>{children}</button>
+    <button
+      type="button"
+      onClick={handleClick}
+      style={{
+        width: full ? "100%" : "auto",
+        padding: "14px 28px",
+        border: primary ? "none" : `1px solid ${C.border}`,
+        background: primary ? C.text : "transparent",
+        color: primary ? C.bg : C.muted,
+        fontFamily: "'Syne', sans-serif",
+        fontSize: 13,
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+        textTransform: "uppercase",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.4 : 1,
+        transition: "all 0.2s",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        ...extraStyle,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
 function Tag({ children, color, bgColor, borderColor }) {
   return (
-    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: color, padding: "4px 10px", border: `1px solid ${borderColor}`, background: bgColor, display: "inline-block" }}>{children}</span>
+    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color, padding: "4px 10px", border: `1px solid ${borderColor}`, background: bgColor, display: "inline-block" }}>
+      {children}
+    </span>
   );
 }
 
 function EntryScreen({ onEnter }) {
   const [fade, setFade] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setFade(true), 100); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => setFade(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", opacity: fade ? 1 : 0, transition: "opacity 0.8s ease" }}>
       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.25em", color: C.muted, textTransform: "uppercase", marginBottom: 32 }}>100 Acrez Holdings, LLC</div>
@@ -225,7 +261,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 36 }}>Modules unlock sequentially. Each one builds on the last. The architecture starts at State because everything downstream depends on it.</div>
         {MODULES.map((mod, i) => {
           const done = completedModules.includes(mod.id);
-          const unlocked = i === 0 || completedModules.includes(MODULES[i - 1].id);
+          const unlocked = i === 0 || completedModules.includes(MODULES[i - 1].id) || mod.id === primaryModule;
           const active = unlocked && !done;
           const primary = mod.id === primaryModule;
           return (
@@ -284,10 +320,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         </div>
         {canSubmit && (
           <Btn primary={!saved} full onClick={handleSubmit} disabled={saved} style={{ background: saved ? C.surface2 : C.text, color: saved ? C.muted : C.bg }}>
-            {saved
-              ? (isLastDay ? "Opening Gate..." : `Advancing to Day ${dayData.day + 1}...`)
-              : (isLastDay ? "Save & Open Gate →" : "Save & Continue →")
-            }
+            {saved ? (isLastDay ? "Opening Gate..." : `Advancing to Day ${dayData.day + 1}...`) : (isLastDay ? "Save & Open Gate →" : "Save & Continue →")}
           </Btn>
         )}
       </div>
@@ -337,38 +370,26 @@ function RetryScreen({ mod, logs, onBack }) {
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: 24 }}>Module {mod.number} — Not Yet Complete</div>
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: C.text, lineHeight: 1.5, marginBottom: 16 }}>That's not failure. That's data.</div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>
-            Review your own evidence below. Identify what broke — was it detection, execution, or exit? Then run the phase again with that specific focus. The module stays open.
-          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, maxWidth: 440, margin: "0 auto" }}>Review your own evidence below. Identify what broke — was it detection, execution, or exit? Then run the phase again with that specific focus. The module stays open.</div>
         </div>
 
         {day6Log && (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 16, height: 1, background: C.muted }}/>Day 6 — {mod.days[5].title}
-            </div>
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${mod.color}`, padding: "16px 20px", fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-              {day6Log}
-            </div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 16, height: 1, background: C.muted }}/>Day 6 — {mod.days[5].title}</div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${mod.color}`, padding: "16px 20px", fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{day6Log}</div>
           </div>
         )}
 
         {day7Log && (
           <div style={{ marginBottom: 32 }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 16, height: 1, background: C.muted }}/>Day 7 — {mod.days[6].title}
-            </div>
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${mod.color}`, padding: "16px 20px", fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-              {day7Log}
-            </div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 16, height: 1, background: C.muted }}/>Day 7 — {mod.days[6].title}</div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${mod.color}`, padding: "16px 20px", fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{day7Log}</div>
           </div>
         )}
 
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.gold}`, padding: "16px 20px", marginBottom: 32 }}>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.gold, marginBottom: 8 }}>Diagnostic Question</div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, fontStyle: "italic" }}>
-            Reading your own logs above — where did the breakdown actually happen? Detection (you didn't notice the spike), execution (you noticed but couldn't run the protocol), or exit (you stayed too long or left wrong)?
-          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.7, fontStyle: "italic" }}>Reading your own logs above — where did the breakdown actually happen? Detection (you didn't notice the spike), execution (you noticed but couldn't run the protocol), or exit (you stayed too long or left wrong)?</div>
         </div>
 
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -385,9 +406,7 @@ function ConfirmReRun({ mod, onConfirm, onCancel }) {
       <div style={{ maxWidth: 460, textAlign: "center" }}>
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: 24 }}>Confirm Re-Run</div>
         <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: C.text, lineHeight: 1.4, marginBottom: 20 }}>This will erase your record of {mod.title}.</div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 40, maxWidth: 400, margin: "0 auto 40px" }}>
-          Your logs, completion date, and progress for this module will be wiped. The module will reopen as a fresh 7-day arc. This is intentional friction — make sure you actually want to redo the work, not just review it.
-        </div>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 40, maxWidth: 400, margin: "0 auto 40px" }}>Your logs, completion date, and progress for this module will be wiped. The module will reopen as a fresh 7-day arc. This is intentional friction — make sure you actually want to redo the work, not just review it.</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
           <Btn onClick={onConfirm} style={{ width: 280, background: "transparent", border: `1px solid ${C.gold}`, color: C.gold }}>Yes — Erase and Re-Run</Btn>
           <Btn primary onClick={onCancel} style={{ width: 280 }}>Cancel</Btn>
@@ -423,8 +442,6 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
     <div style={{ minHeight: "100vh", background: C.bg, padding: "24px 20px 80px" }}>
       <div style={{ maxWidth: 600, margin: "0 auto" }}>
         <div role="button" tabIndex={0} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack(); }} style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.muted, cursor: "pointer", marginBottom: 32, display: "flex", alignItems: "center", gap: 8 }}>← All Modules</div>
-
-        {/* Installed badge */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: C.doneDim, border: `2px solid ${C.done}`, color: C.done, fontSize: 18 }}>✓</div>
           <div>
@@ -437,12 +454,8 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
         <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 28, color: C.text, marginTop: 12, marginBottom: 8, lineHeight: 1.15 }}>{mod.title}</div>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 32 }}>{mod.subtitle}</div>
 
-        {/* Reference banner */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.done}`, padding: "14px 18px", marginBottom: 32, fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.6 }}>
-          You marked this module installed. The arc is now reference material — your record of the work you did. Your logs are preserved below.
-        </div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.done}`, padding: "14px 18px", marginBottom: 32, fontFamily: "'Syne', sans-serif", fontSize: 13, color: "#C8D0E0", lineHeight: 1.6 }}>You marked this module installed. The arc is now reference material — your record of the work you did. Your logs are preserved below.</div>
 
-        {/* Phases with completed days and inline logs */}
         {mod.phases.map((phase, pi) => (
           <div key={pi} style={{ marginBottom: 28 }}>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>Phase {String.fromCharCode(65 + pi)} — {phase.name}</div>
@@ -473,7 +486,6 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
           </div>
         ))}
 
-        {/* Re-Run option */}
         <div style={{ marginTop: 40, paddingTop: 32, borderTop: `1px solid ${C.border}`, textAlign: "center" }}>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.muted, marginBottom: 16 }}>Module Maintenance</div>
           <Btn onClick={() => setConfirmReRun(true)}>Re-Run Module</Btn>
@@ -483,7 +495,6 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
   );
 }
 
-
 function ModuleView({ moduleId, onBack, onComplete }) {
   const mod = MODULES.find(m => m.id === moduleId);
   const initial = loadModuleProgress(moduleId);
@@ -492,7 +503,6 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const [logs, setLogs] = useState(initial.logs);
   const [view, setView] = useState("overview");
 
-  // Defensive — invalid module ID
   if (!mod) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, padding: "40px 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -505,7 +515,6 @@ function ModuleView({ moduleId, onBack, onComplete }) {
     );
   }
 
-  // Persist whenever progress changes
   useEffect(() => {
     saveModuleProgress(moduleId, completedDays, logs);
   }, [moduleId, completedDays, logs]);
@@ -523,7 +532,6 @@ function ModuleView({ moduleId, onBack, onComplete }) {
     setTimeout(() => setCurrentDay(dayIdx + 1), 300);
   }, []);
 
-  // Tightened gate condition — all 7 days completed AND every day has a non-empty log
   const allDaysComplete = [0,1,2,3,4,5,6].every(i => completedDays.includes(i));
   const allLogsPresent = [0,1,2,3,4,5,6].every(i => logs[i] && logs[i].trim().length > 0);
   const gateReady = allDaysComplete && allLogsPresent;
@@ -563,9 +571,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
             })}
           </div>
         ))}
-        {gateReady && (
-          <Btn full onClick={() => setView("gate")} style={{ marginTop: 12, background: mod.colorDim, border: `1px solid ${mod.colorBorder}`, color: mod.color }}>Progression Gate →</Btn>
-        )}
+        {gateReady && <Btn full onClick={() => setView("gate")} style={{ marginTop: 12, background: mod.colorDim, border: `1px solid ${mod.colorBorder}`, color: mod.color }}>Progression Gate →</Btn>}
       </div>
     </div>
   );
@@ -573,18 +579,20 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
 export default function HSPOSPhase2() {
   const [screen, setScreen] = useState("entry");
-const validModules = ["state", "identity", "decision", "calibration"];
-const params = new URLSearchParams(window.location.search);
-const moduleFromUrl = params.get("module");
-const [primaryModule] = useState(
-  validModules.includes(moduleFromUrl) ? moduleFromUrl : "state"
-);
+  const [primaryModule] = useState(() => getModuleFromUrl());
   const [activeModule, setActiveModule] = useState(null);
   const [completedModules, setCompletedModules] = useState(() => loadCompletedModules());
 
-  useEffect(() => { const s = document.createElement("style"); s.textContent = FONTS_CSS; document.head.appendChild(s); return () => document.head.removeChild(s); }, []);
+  useEffect(() => {
+    const s = document.createElement("style");
+    s.textContent = FONTS_CSS;
+    document.head.appendChild(s);
+    return () => document.head.removeChild(s);
+  }, []);
 
-  useEffect(() => { saveCompletedModules(completedModules); }, [completedModules]);
+  useEffect(() => {
+    saveCompletedModules(completedModules);
+  }, [completedModules]);
 
   const handleComplete = useCallback((id) => {
     setCompletedModules(prev => prev.includes(id) ? prev : [...prev, id]);
@@ -593,10 +601,14 @@ const [primaryModule] = useState(
 
   const handleReRun = useCallback((id) => {
     setCompletedModules(prev => prev.filter(mid => mid !== id));
-    // Stay in the module — it will now render as ModuleView (working state) with fresh progress
   }, []);
 
-  if (screen === "entry") return <EntryScreen onEnter={() => setScreen("dashboard")} />;
+  const handleEnter = useCallback(() => {
+    setScreen("dashboard");
+    setActiveModule(primaryModule);
+  }, [primaryModule]);
+
+  if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
 
   if (activeModule) {
     const isInstalled = completedModules.includes(activeModule);
