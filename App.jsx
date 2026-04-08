@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 
 const FONTS_CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
 
-html { scroll-behavior: smooth; }
-body { background: #0D0F14; color: #F0F2F8; font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; background: #0D0F14; }
+body, #root { background: #0D0F14; color: #F0F2F8; font-family: 'Syne', sans-serif; min-height: 100%; width: 100%; max-width: 100%; overflow-x: hidden; margin: 0; padding: 0; }
 *, *::before, *::after { box-sizing: border-box; }
 body::before {
   content: '';
@@ -255,23 +255,23 @@ function EntryScreen({ onEnter }) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, opacity: fade ? 1 : 0, transition: "opacity 0.8s ease" }}>
-      <div style={{ position: "relative", zIndex: 1, maxWidth: L.narrow, margin: "0 auto", padding: "72px 32px 120px" }}>
-        <div style={{ padding: "24px 0 48px", borderBottom: `1px solid ${C.border}`, marginBottom: 48 }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", color: C.muted, textTransform: "uppercase", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ minHeight: "100svh", background: C.bg, opacity: fade ? 1 : 0, transition: "opacity 0.8s ease", display: "flex", alignItems: "center" }}>
+      <div style={{ position: "relative", zIndex: 1, width: "min(100%, 760px)", margin: "0 auto", padding: "40px 24px 48px" }}>
+        <div style={{ padding: "8px 0 28px", borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.2em", color: C.muted, textTransform: "uppercase", marginBottom: 22, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ width: 24, height: 1, background: C.muted, display: "inline-block" }}/>HS-POS · Phase 2 · Execution Modules
           </div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(58px, 8vw, 92px)", lineHeight: 0.98, color: C.text, marginBottom: 22, fontWeight: 400, maxWidth: 620 }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(48px, 7vw, 84px)", lineHeight: 0.98, color: C.text, marginBottom: 18, fontWeight: 400, maxWidth: 560 }}>
             Begin the<br/><em style={{ fontStyle: "italic", color: C.gold }}>Correction.</em>
           </h1>
-          <div style={{ fontSize: 22, color: C.text, lineHeight: 1.65, marginBottom: 34, fontWeight: 500, borderLeft: `3px solid ${C.gold}`, paddingLeft: 18, maxWidth: 640 }}>
+          <div style={{ fontSize: "clamp(17px, 2vw, 20px)", color: C.text, lineHeight: 1.65, marginBottom: 24, fontWeight: 500, borderLeft: `3px solid ${C.gold}`, paddingLeft: 16, maxWidth: 560 }}>
             You now know the problem. What you don't have yet is the correction.
           </div>
-          <div style={{ marginBottom: 40, maxWidth: 700 }}>
-            <p style={{ fontSize: 18, color: C.muted, lineHeight: 1.9, marginBottom: 18 }}>This is the second phase of HS-POS. The diagnostic identified your primary impediment. This is the structured correction.</p>
-            <p style={{ fontSize: 18, color: C.muted, lineHeight: 1.9, marginBottom: 18 }}>Each module is a 7-day correction arc. You start with the highest-priority breakdown point and build forward from there.</p>
+          <div style={{ marginBottom: 28, maxWidth: 620 }}>
+            <p style={{ fontSize: "clamp(15px, 1.5vw, 17px)", color: C.muted, lineHeight: 1.85, marginBottom: 14 }}>This is the second phase of HS-POS. The diagnostic identified your primary impediment. This is the structured correction.</p>
+            <p style={{ fontSize: "clamp(15px, 1.5vw, 17px)", color: C.muted, lineHeight: 1.85, marginBottom: 0 }}>Each module is a 7-day correction arc. You start with the highest-priority breakdown point and build forward from there.</p>
           </div>
-          <Btn primary onClick={onEnter} style={{ padding: "18px 34px", fontSize: 14 }}>Enter <span style={{ fontSize: 18 }}>→</span></Btn>
+          <Btn primary onClick={onEnter} style={{ padding: "16px 32px", fontSize: 14 }}>Enter <span style={{ fontSize: 18 }}>→</span></Btn>
         </div>
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.muted, lineHeight: 1.9 }}>
           7-day execution modules. Built to match the diagnostic logic and continue the correction without breaking continuity.
