@@ -3,8 +3,18 @@ import React, { useState, useEffect, useCallback } from "react";
 const FONTS_CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
 
 html { scroll-behavior: smooth; }
-body { background: #0D0F14; color: #F0F2F8; font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; margin: 0; padding: 0; }
+body {
+  background: #0D0F14;
+  color: #F0F2F8;
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+#root { min-height: 100vh; }
 *, *::before, *::after { box-sizing: border-box; }
+button, textarea, input { font: inherit; }
 body::before {
   content: '';
   position: fixed;
@@ -13,6 +23,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   opacity: 0.4;
+}
+@media (max-width: 640px) {
+  body { -webkit-text-size-adjust: 100%; }
 }
 `;
 
