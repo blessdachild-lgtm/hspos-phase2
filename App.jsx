@@ -197,7 +197,7 @@ function formatCompletionDate(iso) {
   }
 }
 
-// ========== PHASE 1 EXACT BUTTON STYLES ==========
+// Button Components
 function BtnPrimary({ children, onClick, disabled = false, full = false }) {
   const [hover, setHover] = useState(false);
   return (
@@ -302,9 +302,10 @@ function Wrap({ children, maxWidth = "680px" }) {
       position: "relative", 
       zIndex: 1, 
       width: "100%",
-      maxWidth: `min(${maxWidth}, 100%)`, 
+      maxWidth: maxWidth, 
       margin: "0 auto", 
-      padding: "0 20px" 
+      padding: "0 20px",
+      boxSizing: "border-box"
     }}>
       {children}
     </div>
@@ -313,13 +314,22 @@ function Wrap({ children, maxWidth = "680px" }) {
 
 function Page({ children, maxWidth = "680px" }) {
   return (
-    <div style={{ minHeight: "100vh", width: "100%", background: C.bg, color: C.text }}>
+    <div style={{ 
+      minHeight: "100vh", 
+      width: "100%", 
+      maxWidth: "100%",
+      background: C.bg, 
+      color: C.text,
+      margin: 0,
+      padding: 0,
+      boxSizing: "border-box"
+    }}>
       <Wrap maxWidth={maxWidth}>{children}</Wrap>
     </div>
   );
 }
 
-// ========== ENTRY SCREEN ==========
+// Entry Screen
 function EntryScreen({ onEnter }) {
   const [fade, setFade] = useState(false);
   useEffect(() => {
@@ -382,7 +392,7 @@ function EntryScreen({ onEnter }) {
   );
 }
 
-// ========== MODULE SELECT ==========
+// Module Select Screen
 function ModuleSelect({ primaryModule, onSelect, completedModules }) {
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
@@ -504,7 +514,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
   );
 }
 
-// ========== DAY VIEW ==========
+// Day View Screen
 function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onAdvance }) {
   const dayData = mod.days[dayIndex];
   const [log, setLog] = useState(existingLog || "");
@@ -681,7 +691,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
   );
 }
 
-// ========== GATE SCREEN ==========
+// Gate Screen
 function GateScreen({ mod, logs, onPass, onRetry }) {
   const day6Log = logs?.[5] || "";
   const day7Log = logs?.[6] || "";
@@ -921,7 +931,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
   );
 }
 
-// ========== COMPLETION SCREEN ==========
+// Completion Screen
 function CompletionScreen({ mod, onContinue }) {
   const nextMod = MODULES[MODULES.findIndex(m => m.id === mod.id) + 1];
   const completedAt = loadModuleCompletionDate(mod.id);
@@ -972,7 +982,7 @@ function CompletionScreen({ mod, onContinue }) {
   );
 }
 
-// ========== RETRY SCREEN ==========
+// Retry Screen
 function RetryScreen({ mod, logs, onBack }) {
   const day6Log = logs && logs[5];
   const day7Log = logs && logs[6];
@@ -1040,7 +1050,7 @@ function RetryScreen({ mod, logs, onBack }) {
   );
 }
 
-// ========== CONFIRM RE-RUN ==========
+// Confirm Re-Run Screen
 function ConfirmReRun({ mod, onConfirm, onCancel }) {
   const isState = mod.id === "state";
   return (
@@ -1087,7 +1097,7 @@ function ConfirmReRun({ mod, onConfirm, onCancel }) {
   );
 }
 
-// ========== INSTALLED MODULE VIEW ==========
+// Installed Module View
 function InstalledModuleView({ moduleId, onBack, onReRun }) {
   const mod = MODULES.find(m => m.id === moduleId);
   const progress = loadModuleProgress(moduleId);
@@ -1183,7 +1193,7 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
   );
 }
 
-// ========== MODULE VIEW ==========
+// Module View (Active Module)
 function ModuleView({ moduleId, onBack, onComplete }) {
   const mod = MODULES.find(m => m.id === moduleId);
   const initial = loadModuleProgress(moduleId);
@@ -1294,8 +1304,8 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   );
 }
 
-// ========== MAIN APP ==========
-export default function App() {
+// Main App Component
+export default function HSPOSPhase2() {
   const [screen, setScreen] = useState("entry");
   const [primaryModule] = useState(() => getModuleFromUrl());
   const [activeModule, setActiveModule] = useState(null);
@@ -1304,8 +1314,8 @@ export default function App() {
   useEffect(() => {
     const styleTag = document.createElement("style");
     styleTag.textContent = `
-      html {
-        scroll-behavior: smooth;
+      html { 
+        scroll-behavior: smooth; 
         -webkit-text-size-adjust: 100%;
         text-size-adjust: 100%;
       }
@@ -1329,16 +1339,18 @@ export default function App() {
         z-index: 0;
         opacity: 0.4;
       }
-      button:focus-visible, [role="button"]:focus-visible, textarea:focus-visible {
-        outline: 2px solid ${C.gold};
-        outline-offset: 2px;
+      #root, #root > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
       }
       @media (max-width: 640px) {
-        .wrap, [class*="Wrap"] {
-          padding: 0 16px !important;
+        [style*="max-width"] {
+          padding-left: 16px !important;
+          padding-right: 16px !important;
         }
-        h1, [class*="h1"] {
-          letter-spacing: -0.01em !important;
+        h1 {
+          font-size: clamp(40px, 8vw, 64px) !important;
         }
       }
     `;
