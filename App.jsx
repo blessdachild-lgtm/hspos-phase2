@@ -90,7 +90,6 @@ const C = {
   surface: "#13161D", 
   surface2: "#1A1E28", 
   border: "#252A36", 
-  borderLight: "#2A3040",
   text: "#F0F2F8", 
   muted: "#9BA3B5", 
   dim: "#4A5268", 
@@ -98,8 +97,6 @@ const C = {
   done: "#4DB87A", 
   doneDim: "#091410", 
   doneBorder: "#0D3020",
-  bright: "#E0E6F0",
-  brightMuted: "#C8D0E0"
 };
 
 const STORAGE_KEY = "hspos_phase2_v1";
@@ -217,7 +214,7 @@ function BtnPrimary({ children, onClick, disabled = false, full = false }) {
         background: disabled ? C.surface2 : (hover ? C.gold : C.text),
         color: disabled ? C.muted : C.bg,
         border: "none",
-        padding: "18px 36px",
+        padding: "16px 32px",
         width: full ? "100%" : "auto",
         fontFamily: "'Syne', sans-serif",
         fontSize: "15px",
@@ -246,7 +243,7 @@ function BtnSecondary({ children, onClick, full = false }) {
         background: "transparent",
         border: `2px solid ${hover ? C.dim : C.border}`,
         color: hover ? C.text : C.muted,
-        padding: "14px 28px",
+        padding: "12px 24px",
         fontFamily: "'Syne', sans-serif",
         fontSize: "14px",
         fontWeight: 600,
@@ -261,7 +258,6 @@ function BtnSecondary({ children, onClick, full = false }) {
   );
 }
 
-// ========== PHASE 1 EXACT TAG STYLES ==========
 function Tag({ children, color, bgColor, borderColor }) {
   return (
     <span style={{ 
@@ -270,7 +266,7 @@ function Tag({ children, color, bgColor, borderColor }) {
       letterSpacing: "0.2em", 
       textTransform: "uppercase", 
       color, 
-      padding: "8px 16px", 
+      padding: "6px 14px", 
       border: `2px solid ${borderColor}`, 
       background: bgColor, 
       display: "inline-block",
@@ -302,13 +298,28 @@ function SystemTag({ children }) {
 
 function Wrap({ children, maxWidth = "680px" }) {
   return (
-    <div style={{ position: "relative", zIndex: 1, maxWidth, margin: "0 auto", padding: "0 24px" }}>
+    <div style={{ 
+      position: "relative", 
+      zIndex: 1, 
+      width: "100%",
+      maxWidth: `min(${maxWidth}, 100%)`, 
+      margin: "0 auto", 
+      padding: "0 20px" 
+    }}>
       {children}
     </div>
   );
 }
 
-// ========== ENTRY SCREEN - BOLD, DOMINANT ==========
+function Page({ children, maxWidth = "680px" }) {
+  return (
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg, color: C.text }}>
+      <Wrap maxWidth={maxWidth}>{children}</Wrap>
+    </div>
+  );
+}
+
+// ========== ENTRY SCREEN ==========
 function EntryScreen({ onEnter }) {
   const [fade, setFade] = useState(false);
   useEffect(() => {
@@ -317,37 +328,37 @@ function EntryScreen({ onEnter }) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, opacity: fade ? 1 : 0, transition: "opacity 0.8s ease" }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg, opacity: fade ? 1 : 0, transition: "opacity 0.8s ease" }}>
       <Wrap>
-        <div style={{ padding: "100px 0 60px", borderBottom: `2px solid ${C.border}`, marginBottom: "60px" }}>
+        <div style={{ padding: "80px 0 48px", borderBottom: `2px solid ${C.border}`, marginBottom: "48px" }}>
           <SystemTag>HS-POS · Phase 2 · Execution Modules</SystemTag>
           <h1 style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(64px, 12vw, 96px)", 
-            lineHeight: 0.95, 
+            fontSize: "clamp(52px, 10vw, 84px)", 
+            lineHeight: 0.98, 
             color: C.text, 
-            marginBottom: "28px", 
+            marginBottom: "24px", 
             fontWeight: 400,
             letterSpacing: "-0.02em"
           }}>
             Begin the<br/><em style={{ fontStyle: "italic", color: C.gold }}>Correction.</em>
           </h1>
           <div style={{ 
-            fontSize: "20px", 
-            color: C.bright, 
-            lineHeight: 1.6, 
-            marginBottom: "40px", 
+            fontSize: "18px", 
+            color: C.text, 
+            lineHeight: 1.65, 
+            marginBottom: "32px", 
             fontWeight: 500, 
             borderLeft: `4px solid ${C.gold}`, 
-            paddingLeft: "20px" 
+            paddingLeft: "18px" 
           }}>
             You now know the problem. What you don't have yet is the correction.
           </div>
-          <div style={{ marginBottom: "48px" }}>
-            <p style={{ fontSize: "18px", color: C.brightMuted, lineHeight: 1.8, marginBottom: "20px" }}>
+          <div style={{ marginBottom: "40px" }}>
+            <p style={{ fontSize: "17px", color: C.muted, lineHeight: 1.8, marginBottom: "16px" }}>
               This is the second phase of HS-POS. The diagnostic identified your primary impediment. This is the structured correction.
             </p>
-            <p style={{ fontSize: "18px", color: C.brightMuted, lineHeight: 1.8, marginBottom: "0" }}>
+            <p style={{ fontSize: "17px", color: C.muted, lineHeight: 1.8, marginBottom: "0" }}>
               Each module is a 7-day correction arc. You start with the highest-priority breakdown point and build forward from there.
             </p>
           </div>
@@ -359,7 +370,7 @@ function EntryScreen({ onEnter }) {
           color: C.muted, 
           lineHeight: 1.8, 
           marginTop: "60px", 
-          paddingTop: "40px", 
+          paddingTop: "32px", 
           borderTop: `2px solid ${C.border}`,
           paddingBottom: "80px"
         }}>
@@ -371,16 +382,16 @@ function EntryScreen({ onEnter }) {
   );
 }
 
-// ========== MODULE SELECT - STRONG ROWS, BOLD TYPOGRAPHY ==========
+// ========== MODULE SELECT ==========
 function ModuleSelect({ primaryModule, onSelect, completedModules }) {
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
-      <Wrap maxWidth="900px">
-        <div style={{ padding: "100px 0 140px" }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
+      <Wrap maxWidth="min(900px, 100%)">
+        <div style={{ padding: "80px 0 120px" }}>
           <SystemTag>Execution Modules</SystemTag>
           <h1 style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(48px, 8vw, 72px)", 
+            fontSize: "clamp(44px, 7vw, 68px)", 
             color: C.text, 
             marginBottom: "20px", 
             lineHeight: 1.05, 
@@ -390,11 +401,11 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
           </h1>
           <div style={{ 
             fontFamily: "'Syne', sans-serif", 
-            fontSize: "18px", 
-            color: C.brightMuted, 
-            lineHeight: 1.7, 
-            marginBottom: "60px", 
-            paddingBottom: "40px", 
+            fontSize: "17px", 
+            color: C.muted, 
+            lineHeight: 1.8, 
+            marginBottom: "48px", 
+            paddingBottom: "32px", 
             borderBottom: `2px solid ${C.border}` 
           }}>
             Modules unlock sequentially. Each one builds on the last. The architecture starts at State because everything downstream depends on it.
@@ -410,9 +421,9 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                 onClick={() => { if (unlocked) onSelect(mod.id); }} 
                 style={{ 
                   background: active ? C.surface : "transparent", 
-                  border: `2px solid ${active ? mod.colorBorder : done ? C.doneBorder : unlocked ? C.border : C.borderLight}`, 
-                  padding: "32px 36px", 
-                  marginBottom: "20px", 
+                  border: `2px solid ${active ? mod.colorBorder : done ? C.doneBorder : unlocked ? C.border : C.dim}`, 
+                  padding: "28px 32px", 
+                  marginBottom: "16px", 
                   cursor: unlocked ? "pointer" : "default", 
                   transition: "all 0.2s ease", 
                   position: "relative", 
@@ -436,10 +447,10 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                     Your Route
                   </div>
                 )}
-                <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: active ? "16px" : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: active ? "12px" : 0 }}>
                   <div style={{ 
-                    width: "56px", 
-                    height: "56px", 
+                    width: "52px", 
+                    height: "52px", 
                     borderRadius: "50%", 
                     display: "flex", 
                     alignItems: "center", 
@@ -456,7 +467,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                   <div>
                     <div style={{ 
                       fontFamily: "'Syne', sans-serif", 
-                      fontSize: "24px", 
+                      fontSize: "22px", 
                       fontWeight: 700, 
                       color: unlocked ? C.text : C.dim 
                     }}>
@@ -464,10 +475,10 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                     </div>
                     <div style={{ 
                       fontFamily: "'DM Mono', monospace", 
-                      fontSize: "12px", 
+                      fontSize: "11px", 
                       color: unlocked ? C.muted : C.dim, 
                       letterSpacing: "0.15em", 
-                      marginTop: "6px" 
+                      marginTop: "4px" 
                     }}>
                       {done ? "COMPLETED" : unlocked ? "7 DAYS · 3 PHASES" : `LOCKED — Complete Module ${i} first`}
                     </div>
@@ -477,9 +488,9 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                   <div style={{ 
                     fontFamily: "'Syne', sans-serif", 
                     fontSize: "16px", 
-                    color: C.brightMuted, 
+                    color: C.muted, 
                     lineHeight: 1.65, 
-                    paddingLeft: "80px" 
+                    paddingLeft: "72px" 
                   }}>
                     {mod.subtitle}
                   </div>
@@ -493,7 +504,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
   );
 }
 
-// ========== DAY VIEW - PROPER HIERARCHY, STRONG TYPOGRAPHY ==========
+// ========== DAY VIEW ==========
 function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onAdvance }) {
   const dayData = mod.days[dayIndex];
   const [log, setLog] = useState(existingLog || "");
@@ -509,15 +520,15 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
   }, [dayIndex, log, onLog, onAdvance]);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "80px 0 120px" }}>
+        <div style={{ padding: "60px 0 100px" }}>
           <div onClick={onBack} style={{ 
             fontFamily: "'DM Mono', monospace", 
             fontSize: "13px", 
             color: C.muted, 
             cursor: "pointer", 
-            marginBottom: "40px", 
+            marginBottom: "32px", 
             display: "flex", 
             alignItems: "center", 
             gap: "10px" 
@@ -525,13 +536,13 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             ← {mod.title}
           </div>
           
-          <div style={{ display: "flex", gap: "6px", marginBottom: "40px" }}>
+          <div style={{ display: "flex", gap: "4px", marginBottom: "32px" }}>
             {mod.days.map((_, i) => (
               <div key={i} style={{ 
                 flex: 1, 
                 height: "3px", 
                 background: i <= dayIndex || completedDays.includes(i) ? mod.color : C.border, 
-                opacity: i === dayIndex ? 1 : (i < dayIndex || completedDays.includes(i)) ? 0.6 : 0.2 
+                opacity: i === dayIndex ? 1 : (i < dayIndex || completedDays.includes(i)) ? 0.5 : 0.2 
               }} />
             ))}
           </div>
@@ -542,10 +553,10 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           
           <div style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(48px, 8vw, 72px)", 
+            fontSize: "clamp(44px, 7vw, 64px)", 
             color: C.text, 
-            marginTop: "24px", 
-            marginBottom: "12px", 
+            marginTop: "20px", 
+            marginBottom: "10px", 
             lineHeight: 1.05, 
             fontWeight: 400 
           }}>
@@ -554,10 +565,10 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           
           <div style={{ 
             fontFamily: "'Syne', sans-serif", 
-            fontSize: "26px", 
+            fontSize: "24px", 
             fontWeight: 600, 
-            color: C.bright, 
-            marginBottom: "36px" 
+            color: C.text, 
+            marginBottom: "32px" 
           }}>
             {dayData.title}
           </div>
@@ -565,11 +576,11 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           <div style={{ 
             background: mod.colorDim, 
             borderLeft: `4px solid ${mod.color}`, 
-            padding: "20px 24px", 
-            marginBottom: "36px", 
+            padding: "18px 22px", 
+            marginBottom: "32px", 
             fontFamily: "'Syne', sans-serif", 
             fontSize: "17px", 
-            color: C.bright, 
+            color: C.text, 
             lineHeight: 1.65,
             fontWeight: 500
           }}>
@@ -579,9 +590,9 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           <div style={{ 
             fontFamily: "'Syne', sans-serif", 
             fontSize: "17px", 
-            color: C.brightMuted, 
+            color: "#D0D8E8", 
             lineHeight: 1.85, 
-            marginBottom: "40px", 
+            marginBottom: "36px", 
             whiteSpace: "pre-line" 
           }}>
             {dayData.content}
@@ -591,8 +602,8 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             background: C.surface, 
             border: `2px solid ${C.border}`, 
             borderLeft: `4px solid ${C.gold}`, 
-            padding: "20px 24px", 
-            marginBottom: "40px" 
+            padding: "18px 22px", 
+            marginBottom: "36px" 
           }}>
             <div style={{ 
               fontFamily: "'DM Mono', monospace", 
@@ -600,14 +611,14 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
               letterSpacing: "0.2em", 
               textTransform: "uppercase", 
               color: C.gold, 
-              marginBottom: "12px" 
+              marginBottom: "10px" 
             }}>
               Success Metric
             </div>
             <div style={{ 
               fontFamily: "'Syne', sans-serif", 
               fontSize: "16px", 
-              color: C.brightMuted, 
+              color: "#C8D0E0", 
               lineHeight: 1.65, 
               fontStyle: "italic" 
             }}>
@@ -615,14 +626,14 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             </div>
           </div>
           
-          <div style={{ marginBottom: "40px" }}>
+          <div style={{ marginBottom: "36px" }}>
             <div style={{ 
               fontFamily: "'DM Mono', monospace", 
               fontSize: "11px", 
               letterSpacing: "0.2em", 
               textTransform: "uppercase", 
               color: C.muted, 
-              marginBottom: "16px", 
+              marginBottom: "14px", 
               background: C.surface, 
               padding: "12px 20px", 
               border: `2px solid ${C.border}` 
@@ -633,7 +644,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
               fontFamily: "'Syne', sans-serif", 
               fontSize: "16px", 
               color: mod.color, 
-              marginBottom: "16px", 
+              marginBottom: "14px", 
               fontStyle: "italic", 
               padding: "0 6px" 
             }}>
@@ -645,11 +656,11 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
               placeholder="Write your log here..." 
               style={{ 
                 width: "100%", 
-                minHeight: "220px", 
+                minHeight: "200px", 
                 background: C.surface, 
                 border: `2px solid ${C.border}`, 
                 color: C.text, 
-                padding: "20px 24px", 
+                padding: "18px 22px", 
                 fontFamily: "'Syne', sans-serif", 
                 fontSize: "16px", 
                 lineHeight: 1.7, 
@@ -741,61 +752,52 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
     Object.values(checks).every(Boolean);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "100px 0 140px", textAlign: "center" }}>
+        <div style={{ padding: "100px 0 120px", textAlign: "center" }}>
           <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
             Progression Gate — Module {mod.number}
           </Tag>
           <div style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(36px, 6vw, 48px)", 
+            fontSize: "clamp(32px, 5vw, 44px)", 
             color: C.text, 
             lineHeight: 1.3, 
-            marginBottom: "24px", 
-            marginTop: "32px", 
+            marginBottom: "20px", 
+            marginTop: "28px", 
             fontWeight: 400 
           }}>
-            Evidence required.
+            {mod.gate}
           </div>
-          <div style={{ 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: "16px", 
-            color: C.brightMuted, 
-            lineHeight: 1.7, 
-            marginBottom: "32px" 
-          }}>
-            This gate verifies installation using your own recorded reps. It is not a vibe check.
-          </div>
-
+          
           {(day6Log || day7Log) && (
             <div style={{ 
               background: C.surface, 
               border: `2px solid ${C.border}`, 
               borderLeft: `4px solid ${mod.color}`, 
-              padding: "20px 24px", 
+              padding: "18px 22px", 
               marginBottom: "32px", 
               textAlign: "left" 
             }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "16px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "14px" }}>
                 Your Evidence
               </div>
               {day6Log && (
-                <div style={{ marginBottom: day7Log ? "20px" : 0 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "8px" }}>
+                <div style={{ marginBottom: day7Log ? "16px" : 0 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "6px" }}>
                     Day 6 — {mod.days[5].title}
                   </div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                     {day6Log}
                   </div>
                 </div>
               )}
               {day7Log && (
                 <div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "8px" }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "6px" }}>
                     Day 7 — {mod.days[6].title}
                   </div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                     {day7Log}
                   </div>
                 </div>
@@ -807,19 +809,16 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
             background: C.surface, 
             border: `2px solid ${C.border}`, 
             borderLeft: `4px solid ${C.gold}`, 
-            padding: "20px 24px", 
+            padding: "18px 22px", 
             marginBottom: "32px", 
             textAlign: "left" 
           }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "16px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "14px" }}>
               Gate Evidence
             </div>
-            <div style={{ marginBottom: "20px" }}>
+            <div style={{ marginBottom: "18px" }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "8px" }}>
                 {gateConfig.signatureLabel}
-              </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: C.muted, lineHeight: 1.6, marginBottom: "10px" }}>
-                {gateConfig.signatureHint}
               </div>
               <textarea
                 value={evidenceSignature}
@@ -827,16 +826,17 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
                 placeholder="Write the exact pattern in plain language..."
                 style={{
                   width: "100%",
-                  minHeight: "80px",
+                  minHeight: "70px",
                   background: C.bg,
                   border: `2px solid ${C.border}`,
                   color: C.text,
-                  padding: "14px 16px",
+                  padding: "12px 14px",
                   fontFamily: "'Syne', sans-serif",
                   fontSize: "14px",
                   lineHeight: 1.6,
                   resize: "vertical",
                   outline: "none",
+                  marginBottom: "12px",
                 }}
               />
             </div>
@@ -844,20 +844,17 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "8px" }}>
                 {gateConfig.actionLabel}
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: C.muted, lineHeight: 1.6, marginBottom: "10px" }}>
-                {gateConfig.actionHint}
-              </div>
               <textarea
                 value={evidenceAction}
                 onChange={(e) => setEvidenceAction(e.target.value)}
                 placeholder="What you did when it fired..."
                 style={{
                   width: "100%",
-                  minHeight: "80px",
+                  minHeight: "70px",
                   background: C.bg,
                   border: `2px solid ${C.border}`,
                   color: C.text,
-                  padding: "14px 16px",
+                  padding: "12px 14px",
                   fontFamily: "'Syne', sans-serif",
                   fontSize: "14px",
                   lineHeight: 1.6,
@@ -872,14 +869,14 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
             background: C.surface, 
             border: `2px solid ${C.border}`, 
             borderLeft: `4px solid ${mod.color}`, 
-            padding: "20px 24px", 
-            marginBottom: "40px", 
+            padding: "18px 22px", 
+            marginBottom: "36px", 
             textAlign: "left" 
           }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "16px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "14px" }}>
               Confirmation
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {Object.entries(gateConfig.checklist).map(([key, label]) => (
                 <label
                   key={key}
@@ -889,7 +886,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
                     gap: "12px",
                     fontFamily: "'Syne', sans-serif",
                     fontSize: "14px",
-                    color: C.brightMuted,
+                    color: "#C8D0E0",
                     lineHeight: 1.55,
                     cursor: "pointer",
                   }}
@@ -906,7 +903,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", alignItems: "center" }}>
             <BtnPrimary onClick={onPass} disabled={!canPass} full>
               Yes — Gate Passed
             </BtnPrimary>
@@ -915,7 +912,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
             </BtnSecondary>
           </div>
 
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: C.dim, marginTop: "32px", lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: C.dim, marginTop: "28px", lineHeight: 1.6 }}>
             Gate logic: evidence + confirmation. No shame in reps.
           </div>
         </div>
@@ -929,20 +926,20 @@ function CompletionScreen({ mod, onContinue }) {
   const nextMod = MODULES[MODULES.findIndex(m => m.id === mod.id) + 1];
   const completedAt = loadModuleCompletionDate(mod.id);
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "120px 0 140px", textAlign: "center" }}>
+        <div style={{ padding: "100px 0 120px", textAlign: "center" }}>
           <div style={{ 
-            width: "80px", 
-            height: "80px", 
+            width: "72px", 
+            height: "72px", 
             borderRadius: "50%", 
-            margin: "0 auto 32px", 
+            margin: "0 auto 28px", 
             background: mod.colorDim, 
             border: `3px solid ${mod.color}`, 
             display: "flex", 
             alignItems: "center", 
             justifyContent: "center", 
-            fontSize: "36px", 
+            fontSize: "32px", 
             color: mod.color 
           }}>
             ✓
@@ -951,21 +948,21 @@ function CompletionScreen({ mod, onContinue }) {
             Marked Installed
           </div>
           {completedAt && (
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "24px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "20px" }}>
               Evidence confirmed · {formatCompletionDate(completedAt)}
             </div>
           )}
           <div style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(40px, 6vw, 56px)", 
+            fontSize: "clamp(36px, 5vw, 52px)", 
             color: C.text, 
-            marginBottom: "20px", 
+            marginBottom: "16px", 
             lineHeight: 1.1, 
             fontWeight: 400 
           }}>
             {mod.title}
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.brightMuted, lineHeight: 1.7, marginBottom: "48px" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "48px" }}>
             {nextMod ? `Module ${nextMod.number}: ${nextMod.title} is now unlocked.` : "All four execution modules complete. The full operating loop is installed."}
           </div>
           <BtnPrimary onClick={onContinue}>{nextMod ? `Begin Module ${nextMod.number}` : "Return to Dashboard"}</BtnPrimary>
@@ -980,56 +977,56 @@ function RetryScreen({ mod, logs, onBack }) {
   const day6Log = logs && logs[5];
   const day7Log = logs && logs[6];
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "100px 0 140px" }}>
-          <div style={{ textAlign: "center", marginBottom: "60px" }}>
+        <div style={{ padding: "80px 0 120px" }}>
+          <div style={{ textAlign: "center", marginBottom: "48px" }}>
             <Tag color={C.gold} bgColor="transparent" borderColor={C.border}>
               Module {mod.number} — Not Yet Complete
             </Tag>
             <div style={{ 
               fontFamily: "'DM Serif Display', serif", 
-              fontSize: "clamp(40px, 6vw, 56px)", 
+              fontSize: "clamp(36px, 5vw, 52px)", 
               color: C.text, 
               lineHeight: 1.3, 
-              marginBottom: "24px", 
-              marginTop: "32px", 
+              marginBottom: "20px", 
+              marginTop: "28px", 
               fontWeight: 400 
             }}>
               That's not failure. That's data.
             </div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.brightMuted, lineHeight: 1.7 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7 }}>
               Review the evidence below. Identify what broke — detection, execution, or exit — then run the phase again with that specific focus.
             </div>
           </div>
 
           {day6Log && (
-            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "20px 24px", marginBottom: "24px" }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "12px" }}>
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "18px 22px", marginBottom: "20px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "10px" }}>
                 Day 6 — {mod.days[5].title}
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                 {day6Log}
               </div>
             </div>
           )}
 
           {day7Log && (
-            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "20px 24px", marginBottom: "32px" }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "12px" }}>
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "18px 22px", marginBottom: "28px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "10px" }}>
                 Day 7 — {mod.days[6].title}
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                 {day7Log}
               </div>
             </div>
           )}
 
-          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "20px 24px", marginBottom: "48px" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "12px" }}>
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "18px 22px", marginBottom: "40px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "10px" }}>
               Diagnostic Question
             </div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: C.brightMuted, lineHeight: 1.7, fontStyle: "italic" }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: "#C8D0E0", lineHeight: 1.7, fontStyle: "italic" }}>
               Reading your own logs above — where did the breakdown actually happen? Detection, execution, or exit?
             </div>
           </div>
@@ -1047,36 +1044,36 @@ function RetryScreen({ mod, logs, onBack }) {
 function ConfirmReRun({ mod, onConfirm, onCancel }) {
   const isState = mod.id === "state";
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "120px 0 140px", textAlign: "center" }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "32px" }}>
+        <div style={{ padding: "100px 0 120px", textAlign: "center" }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "28px" }}>
             Confirm Re-Run
           </div>
           <div style={{ 
             fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(36px, 5vw, 48px)", 
+            fontSize: "clamp(32px, 5vw, 44px)", 
             color: C.text, 
             lineHeight: 1.3, 
-            marginBottom: "24px", 
+            marginBottom: "20px", 
             fontWeight: 400 
           }}>
             This will erase your record of {mod.title}.
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.brightMuted, lineHeight: 1.7, marginBottom: "32px" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "28px" }}>
             Your logs, completion date, and progress for this module will be wiped. The module will reopen as a fresh 7-day arc.
           </div>
           {isState && (
-            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "20px 24px", marginBottom: "40px", textAlign: "left" }}>
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "16px 20px", marginBottom: "36px", textAlign: "left" }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "8px" }}>
                 Important
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7 }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7 }}>
                 State is foundational. Re-running State also re-locks Identity, Decision, and Calibration until State is completed again.
               </div>
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", alignItems: "center" }}>
             <BtnSecondary onClick={onConfirm} full style={{ borderColor: C.gold, color: C.gold }}>
               Yes — Erase and Re-Run
             </BtnSecondary>
@@ -1100,10 +1097,10 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
 
   if (!mod) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg }}>
+      <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
         <Wrap>
-          <div style={{ padding: "120px 0", textAlign: "center" }}>
-            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 40px)", color: C.text, marginBottom: "24px", fontWeight: 400 }}>Module Not Found</div>
+          <div style={{ padding: "100px 0", textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 5vw, 36px)", color: C.text, marginBottom: "20px", fontWeight: 400 }}>Module Not Found</div>
             <BtnSecondary onClick={onBack}>← Back to Modules</BtnSecondary>
           </div>
         </Wrap>
@@ -1116,14 +1113,14 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "80px 0 120px" }}>
-          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "40px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ padding: "60px 0 100px" }}>
+          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "32px", display: "flex", alignItems: "center", gap: "10px" }}>
             ← All Modules
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
-            <div style={{ width: "48px", height: "48px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: C.doneDim, border: `2px solid ${C.done}`, color: C.done, fontSize: "24px" }}>✓</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: C.doneDim, border: `2px solid ${C.done}`, color: C.done, fontSize: "22px" }}>✓</div>
             <div>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.done }}>Marked Installed</div>
               {completedAt && <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginTop: "4px" }}>Evidence confirmed · {formatCompletionDate(completedAt)}</div>}
@@ -1133,20 +1130,20 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
           <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
             Module {mod.number} · {mod.engine}
           </Tag>
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(44px, 7vw, 64px)", color: C.text, marginTop: "24px", marginBottom: "16px", lineHeight: 1.05, fontWeight: 400 }}>
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 6vw, 60px)", color: C.text, marginTop: "20px", marginBottom: "12px", lineHeight: 1.05, fontWeight: 400 }}>
             {mod.title}
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.brightMuted, lineHeight: 1.7, marginBottom: "40px" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "36px" }}>
             {mod.subtitle}
           </div>
 
-          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.done}`, padding: "20px 24px", marginBottom: "48px", fontFamily: "'Syne', sans-serif", fontSize: "16px", color: C.brightMuted, lineHeight: 1.7 }}>
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.done}`, padding: "16px 20px", marginBottom: "40px", fontFamily: "'Syne', sans-serif", fontSize: "16px", color: "#C8D0E0", lineHeight: 1.7 }}>
             This module is installed. The arc below is now preserved as your reference record.
           </div>
 
           {mod.phases.map((phase, pi) => (
-            <div key={pi} style={{ marginBottom: "32px" }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "16px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
+            <div key={pi} style={{ marginBottom: "28px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "14px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
                 Phase {String.fromCharCode(65 + pi)} — {phase.name}
               </div>
               {phase.days.map(dayNum => {
@@ -1156,8 +1153,8 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
                 const isExpanded = expandedDay === dayIdx;
                 return (
                   <div key={dayNum} style={{ marginBottom: "8px" }}>
-                    <div onClick={() => setExpandedDay(isExpanded ? null : dayIdx)} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px 24px", background: C.doneDim, border: `2px solid ${C.doneBorder}`, cursor: "pointer", transition: "all 0.2s" }}>
-                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: C.doneDim, border: `2px solid ${C.doneBorder}`, fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.done }}>✓</div>
+                    <div onClick={() => setExpandedDay(isExpanded ? null : dayIdx)} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 20px", background: C.doneDim, border: `2px solid ${C.doneBorder}`, cursor: "pointer", transition: "all 0.2s" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: C.doneDim, border: `2px solid ${C.doneBorder}`, fontFamily: "'DM Mono', monospace", fontSize: "12px", color: C.done }}>✓</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "18px", fontWeight: 600, color: C.text }}>{dayData.title}</div>
                         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginTop: "4px" }}>Day {dayNum} · Tap to view log</div>
@@ -1165,9 +1162,9 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
                       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "14px", color: C.muted }}>{isExpanded ? "−" : "+"}</div>
                     </div>
                     {isExpanded && log && (
-                      <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderTop: "none", borderLeft: `4px solid ${mod.color}`, padding: "20px 24px" }}>
-                        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: mod.color, marginBottom: "12px", fontStyle: "italic" }}>{dayData.logPrompt}</div>
-                        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.brightMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{log}</div>
+                      <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderTop: "none", borderLeft: `4px solid ${mod.color}`, padding: "16px 20px" }}>
+                        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: mod.color, marginBottom: "10px", fontStyle: "italic" }}>{dayData.logPrompt}</div>
+                        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#D0D8E8", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{log}</div>
                       </div>
                     )}
                   </div>
@@ -1176,8 +1173,8 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
             </div>
           ))}
 
-          <div style={{ marginTop: "48px", paddingTop: "40px", borderTop: `2px solid ${C.border}`, textAlign: "center" }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "20px" }}>Module Maintenance</div>
+          <div style={{ marginTop: "40px", paddingTop: "32px", borderTop: `2px solid ${C.border}`, textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "16px" }}>Module Maintenance</div>
             <BtnSecondary onClick={() => setConfirmReRun(true)}>Re-Run Module</BtnSecondary>
           </div>
         </div>
@@ -1221,10 +1218,10 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
   if (!mod) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg }}>
+      <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
         <Wrap>
-          <div style={{ padding: "120px 0", textAlign: "center" }}>
-            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 40px)", color: C.text, marginBottom: "24px", fontWeight: 400 }}>Module Not Found</div>
+          <div style={{ padding: "100px 0", textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 5vw, 36px)", color: C.text, marginBottom: "20px", fontWeight: 400 }}>Module Not Found</div>
             <BtnSecondary onClick={onBack}>← Back to Modules</BtnSecondary>
           </div>
         </Wrap>
@@ -1242,10 +1239,10 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   if (currentDay !== null) return <DayView key={currentDay} mod={mod} dayIndex={currentDay} existingLog={logs[currentDay]} completedDays={completedDays} onLog={handleLog} onBack={() => setCurrentDay(null)} onAdvance={handleAdvance} />;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "80px 0 120px" }}>
-          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "40px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ padding: "60px 0 100px" }}>
+          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "32px", display: "flex", alignItems: "center", gap: "10px" }}>
             ← All Modules
           </div>
           
@@ -1253,17 +1250,17 @@ function ModuleView({ moduleId, onBack, onComplete }) {
             Module {mod.number} · {mod.engine}
           </Tag>
           
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(44px, 7vw, 64px)", color: C.text, marginTop: "24px", marginBottom: "16px", lineHeight: 1.05, fontWeight: 400 }}>
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 6vw, 60px)", color: C.text, marginTop: "20px", marginBottom: "12px", lineHeight: 1.05, fontWeight: 400 }}>
             {mod.title}
           </div>
           
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.brightMuted, lineHeight: 1.7, marginBottom: "48px" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "40px" }}>
             {mod.subtitle}
           </div>
           
           {mod.phases.map((phase, pi) => (
-            <div key={pi} style={{ marginBottom: "32px" }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "16px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
+            <div key={pi} style={{ marginBottom: "28px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "14px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
                 Phase {String.fromCharCode(65 + pi)} — {phase.name}
               </div>
               {phase.days.map(dayNum => {
@@ -1272,8 +1269,8 @@ function ModuleView({ moduleId, onBack, onComplete }) {
                 const isDone = completedDays.includes(dayIdx);
                 const isAvailable = dayIdx === 0 || completedDays.includes(dayIdx - 1) || isDone;
                 return (
-                  <div key={dayNum} onClick={() => { if (isAvailable) setCurrentDay(dayIdx); }} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px 24px", background: isDone ? C.doneDim : "transparent", border: `2px solid ${isDone ? C.doneBorder : C.border}`, marginBottom: "8px", cursor: isAvailable ? "pointer" : "default", opacity: isAvailable ? 1 : 0.6, transition: "all 0.2s" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isDone ? C.doneDim : C.surface, border: `2px solid ${isDone ? C.doneBorder : C.border}`, fontFamily: "'DM Mono', monospace", fontSize: "13px", color: isDone ? C.done : C.muted }}>
+                  <div key={dayNum} onClick={() => { if (isAvailable) setCurrentDay(dayIdx); }} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 20px", background: isDone ? C.doneDim : "transparent", border: `2px solid ${isDone ? C.doneBorder : C.border}`, marginBottom: "8px", cursor: isAvailable ? "pointer" : "default", opacity: isAvailable ? 1 : 0.5, transition: "all 0.2s" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isDone ? C.doneDim : C.surface, border: `2px solid ${isDone ? C.doneBorder : C.border}`, fontFamily: "'DM Mono', monospace", fontSize: "12px", color: isDone ? C.done : C.muted }}>
                       {isDone ? "✓" : dayNum}
                     </div>
                     <div>
@@ -1287,7 +1284,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
           ))}
           
           {gateReady && (
-            <div style={{ marginTop: "40px" }}>
+            <div style={{ marginTop: "32px" }}>
               <BtnPrimary onClick={() => setView("gate")} full>Progression Gate</BtnPrimary>
             </div>
           )}
@@ -1307,11 +1304,17 @@ export default function App() {
   useEffect(() => {
     const styleTag = document.createElement("style");
     styleTag.textContent = `
-      html { scroll-behavior: smooth; }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
       html, body, #root {
         margin: 0;
         padding: 0;
         min-height: 100%;
+        width: 100%;
+        max-width: 100%;
         background: ${C.bg};
         color: ${C.text};
         font-family: 'Syne', sans-serif;
@@ -1330,8 +1333,13 @@ export default function App() {
         outline: 2px solid ${C.gold};
         outline-offset: 2px;
       }
-      @media (max-width: 480px) {
-        textarea { min-height: 180px !important; }
+      @media (max-width: 640px) {
+        .wrap, [class*="Wrap"] {
+          padding: 0 16px !important;
+        }
+        h1, [class*="h1"] {
+          letter-spacing: -0.01em !important;
+        }
       }
     `;
     document.head.appendChild(styleTag);
