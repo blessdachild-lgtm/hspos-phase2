@@ -85,7 +85,7 @@ const MODULES = [
   },
 ];
 
-const C = { bg: "#0D0F14", surface: "#13161D", surface2: "#1A1E28", border: "#252A36", text: "#F0F2F8", muted: "#9BA3B5", dim: "#4A5268", gold: "#C9A84C", done: "#4DB87A", doneDim: "#091410", doneBorder: "#0D3020" };
+const C = { bg: "#0D0F14", surface: "#13161D", surface2: "#1A1E28", border: "#252A36", borderLight: "#2E3444", text: "#F0F2F8", body: "#D0D8E8", muted: "#9BA3B5", mutedStrong: "#B8C0D4", dim: "#4A5268", gold: "#C9A84C", done: "#4DB87A", doneDim: "#091410", doneBorder: "#0D3020" };
 
 const STORAGE_KEY = "hspos_phase2_v1";
 
@@ -269,7 +269,9 @@ function BtnPrimary({ children, onClick, disabled = false, full = false, style =
         textTransform: "uppercase",
         cursor: disabled ? "default" : "pointer",
         transition: "all 0.2s ease",
-        minHeight: 48,
+        minHeight: 54,
+        borderRadius: 14,
+        boxShadow: disabled ? "none" : "0 10px 30px rgba(0,0,0,0.35)",
         ...style,
       }}
     >
@@ -309,7 +311,9 @@ function BtnSecondary({ children, onClick, full = false, style = {} }) {
         textTransform: "uppercase",
         cursor: "pointer",
         transition: "all 0.18s ease",
-        minHeight: 44,
+        minHeight: 50,
+        borderRadius: 14,
+        background: hover ? C.surface2 : "transparent",
         ...style,
       }}
     >
@@ -383,7 +387,7 @@ function EntryScreen({ onEnter }) {
           <h1
             style={{
               fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(40px, 8vw, 64px)",
+              fontSize: "clamp(52px, 10vw, 76px)",
               lineHeight: 1.05,
               color: C.text,
               marginBottom: 16,
@@ -397,8 +401,8 @@ function EntryScreen({ onEnter }) {
 
           <div
             style={{
-              fontSize: 16,
-              color: C.text,
+              fontSize: 18,
+              color: C.body,
               lineHeight: 1.7,
               marginBottom: 32,
               fontWeight: 500,
@@ -410,11 +414,11 @@ function EntryScreen({ onEnter }) {
           </div>
 
           <div style={{ marginBottom: 40 }}>
-            <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 16 }}>
-              Phase 1 identified the breakdown. Phase 2 installs the correction — day by day, rep by rep.
+            <p style={{ fontSize: 17, color: C.body, lineHeight: 1.8, marginBottom: 16 }}>
+              Phase 1 identified the breakdown. Phase 2 installs the correction — day by day, rep by rep. Progression is earned through evidence, not vibe.
             </p>
-            <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.8, marginBottom: 0 }}>
-              This is not more explanation. This is structured execution.
+            <p style={{ fontSize: 17, color: C.body, lineHeight: 1.8, marginBottom: 0 }}>
+              This is not more explanation. This is structured execution under load.
             </p>
           </div>
 
@@ -451,7 +455,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
         <h1
           style={{
             fontFamily: "'DM Serif Display', serif",
-            fontSize: "clamp(36px, 6vw, 56px)",
+            fontSize: "clamp(42px, 7vw, 64px)",
             lineHeight: 1.08,
             color: C.text,
             marginBottom: 14,
@@ -464,8 +468,8 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
         <div
           style={{
             fontFamily: "'Syne', sans-serif",
-            fontSize: 15,
-            color: C.muted,
+            fontSize: 16,
+            color: C.body,
             lineHeight: 1.8,
             marginBottom: 40,
             paddingBottom: 28,
@@ -499,17 +503,39 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                 }
               }}
               style={{
-                background: active ? C.surface : "transparent",
-                border: `1px solid ${done ? C.doneBorder : active ? mod.colorBorder : C.border}`,
-                padding: "24px 28px",
+                background: done ? C.doneDim : unlocked ? (active ? C.surface : C.surface2) : C.surface2,
+                border: `1px solid ${done ? C.doneBorder : active ? mod.colorBorder : unlocked ? C.border : C.borderLight}`,
+                borderLeft: `3px solid ${done ? C.done : mod.color}`,
+                padding: "24px 24px",
                 marginBottom: 14,
                 cursor: unlocked ? "pointer" : "default",
-                opacity: unlocked ? 1 : 0.38,
+                opacity: 1,
                 transition: "all 0.2s ease",
                 position: "relative",
                 outline: "none",
+                boxShadow: active ? "0 18px 40px rgba(0,0,0,0.18)" : "none",
               }}
             >
+              {!unlocked && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 9,
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    padding: "4px 8px",
+                    border: `1px solid ${C.border}`,
+                    color: C.mutedStrong,
+                    background: C.bg,
+                  }}
+                >
+                  Locked
+                </div>
+              )}
+
               {primary && (
                 <div
                   style={{
@@ -551,7 +577,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 19, fontWeight: 600, color: unlocked ? C.text : C.muted }}>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: unlocked ? C.text : C.mutedStrong }}>
                     {mod.title}
                   </div>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.1em", marginTop: 4 }}>
@@ -561,9 +587,9 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
               </div>
 
               {(active || primary) && (
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.65, paddingLeft: 58 }}>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: C.body, lineHeight: 1.65, paddingLeft: 58 }}>
                   {primary && !active
-                    ? `Primary route: ${mod.subtitle} Complete upstream modules first.`
+                    ? `Primary route identified. ${mod.subtitle} Complete upstream modules first.`
                     : mod.subtitle}
                 </div>
               )}
@@ -642,7 +668,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         <div
           style={{
             fontFamily: "'DM Serif Display', serif",
-            fontSize: "clamp(34px, 6vw, 52px)",
+            fontSize: "clamp(40px, 7vw, 60px)",
             color: C.text,
             marginTop: 16,
             marginBottom: 6,
@@ -653,7 +679,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           Day {dayData.day}
         </div>
 
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 19, fontWeight: 500, color: C.muted, marginBottom: 28 }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 600, color: C.body, marginBottom: 28 }}>
           {dayData.title}
         </div>
 
@@ -664,20 +690,20 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             padding: "14px 18px",
             marginBottom: 28,
             fontFamily: "'Syne', sans-serif",
-            fontSize: 15,
-            color: C.text,
+            fontSize: 17,
+            color: C.body,
             lineHeight: 1.7,
           }}
         >
           {dayData.objective}
         </div>
 
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, color: "#D0D8E8", lineHeight: 1.9, marginBottom: 32, whiteSpace: "pre-line" }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, color: C.body, lineHeight: 1.9, marginBottom: 32, whiteSpace: "pre-line" }}>
           {dayData.content}
         </div>
 
         <SummaryPanel label="Success Metric">
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: "#C8D0E0", lineHeight: 1.65, fontStyle: "italic" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, color: C.body, lineHeight: 1.65, fontStyle: "italic" }}>
             {dayData.metric}
           </div>
         </SummaryPanel>
@@ -699,7 +725,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             Post-Session Log
           </div>
 
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, color: mod.color, marginBottom: 12, fontStyle: "italic" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, color: mod.color, marginBottom: 12, fontStyle: "italic" }}>
             {dayData.logPrompt}
           </div>
 
@@ -712,9 +738,11 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             placeholder="Write your log here..."
             style={{
               width: "100%",
-              minHeight: 180,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
+              minHeight: 210,
+              background: C.surface2,
+              border: `1px solid ${C.dim}`,
+              borderRadius: 12,
+              boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.25)",
               color: C.text,
               padding: "16px 18px",
               fontFamily: "'Syne', sans-serif",
@@ -818,7 +846,8 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
 
   return (
     <Page>
-      <div style={{ padding: "80px 0 110px", textAlign: "center" }}>
+      <div style={{ padding: "80px 0 110px" }}>
+        <div style={{ textAlign: "center" }}>
         <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
           Progression Gate — Module {mod.number}
         </Tag>
@@ -952,6 +981,9 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
           </div>
         </SummaryPanel>
 
+        </div>
+
+        <div style={{ textAlign: "left" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", marginTop: 28 }}>
           <BtnPrimary onClick={onPass} disabled={!canPass} full>
             Yes — Gate Passed
@@ -961,7 +993,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
           </BtnSecondary>
         </div>
 
-        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.dim, marginTop: 18, lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.dim, marginTop: 18, lineHeight: 1.6, textAlign: "center" }}>
           Gate logic: evidence + confirmation. No shame in reps.
         </div>
       </div>
@@ -1449,11 +1481,12 @@ function ModuleView({ moduleId, onBack, onComplete }) {
                     alignItems: "center",
                     gap: 14,
                     padding: "16px 18px",
-                    background: isDone ? C.doneDim : "transparent",
-                    border: `1px solid ${isDone ? C.doneBorder : C.border}`,
-                    marginBottom: 6,
+                    background: isDone ? C.doneDim : isAvailable ? C.surface2 : C.surface2,
+                    border: `1px solid ${isDone ? C.doneBorder : isAvailable ? C.border : C.borderLight}`,
+                    borderLeft: `3px solid ${isDone ? C.done : mod.color}`,
+                    marginBottom: 8,
                     cursor: isAvailable ? "pointer" : "default",
-                    opacity: isAvailable ? 1 : 0.38,
+                    opacity: 1,
                     transition: "all 0.2s ease",
                     outline: "none",
                   }}
@@ -1463,7 +1496,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
                   </div>
 
                   <div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 600, color: isAvailable ? C.text : C.muted }}>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: isAvailable ? C.text : C.mutedStrong }}>
                       {dayData.title}
                     </div>
                     <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: C.dim, marginTop: 2 }}>
