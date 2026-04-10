@@ -134,6 +134,41 @@ const SYNTHESIS_CONFIG = {
   },
 };
 
+const REFERENCE_CARD_CONFIG = {
+  state: {
+    label: "Spike Signature",
+    dayIndex: 3,
+    color: "#E8833A",
+    colorDim: "#1C1209",
+    colorBorder: "#3D2810",
+    description: "What your body does under pressure",
+  },
+  identity: {
+    label: "Identity Anchor",
+    dayIndex: 0,
+    color: "#4A9EDB",
+    colorDim: "#091520",
+    colorBorder: "#0D2D42",
+    description: "Who you are independent of outcome",
+  },
+  decision: {
+    label: "Override Script",
+    dayIndex: 1,
+    color: "#9B6FDB",
+    colorDim: "#120D1C",
+    colorBorder: "#261840",
+    description: "The exact language that stops you",
+  },
+  calibration: {
+    label: "Signal Read",
+    dayIndex: 4,
+    color: "#4DB87A",
+    colorDim: "#091410",
+    colorBorder: "#0D3020",
+    description: "Where your reads have been off",
+  },
+};
+
 const STORAGE_KEY = "hspos_phase2_v1";
 const VALID_MODULES = ["state", "identity", "decision", "calibration"];
 
@@ -209,6 +244,14 @@ function loadModuleCompletionDate(moduleId) {
   const state = loadState();
   if (!state || !state.modules || !state.modules[moduleId]) return null;
   return state.modules[moduleId].completedAt || null;
+}
+
+function loadModuleLog(moduleId, dayIndex) {
+  const state = loadState();
+  if (!state || !state.modules || !state.modules[moduleId]) return "";
+  const logs = state.modules[moduleId].logs;
+  if (!logs) return "";
+  return logs[dayIndex] || "";
 }
 
 function resetModuleProgress(moduleId) {
@@ -863,8 +906,11 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
               Gate Evidence
             </div>
             <div style={{ marginBottom: "18px" }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "8px" }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "6px" }}>
                 {gateConfig.signatureLabel}
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: C.muted, lineHeight: 1.6, marginBottom: "10px", paddingLeft: "12px", borderLeft: `2px solid ${C.border}` }}>
+                {gateConfig.signatureHint}
               </div>
               <textarea
                 value={evidenceSignature}
@@ -887,8 +933,11 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
               />
             </div>
             <div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "8px" }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: mod.color, fontStyle: "italic", marginBottom: "6px" }}>
                 {gateConfig.actionLabel}
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: C.muted, lineHeight: 1.6, marginBottom: "10px", paddingLeft: "12px", borderLeft: `2px solid ${C.border}` }}>
+                {gateConfig.actionHint}
               </div>
               <textarea
                 value={evidenceAction}
@@ -973,320 +1022,212 @@ function SynthesisScreen({ mod, logs, onContinue }) {
   const keyLog = logs?.[config.keyDayIndex] || "";
   const day1Log = logs?.[0] || "";
   const day7Log = logs?.[6] || "";
- 
-  // Count completed logs for evidence count
   const logCount = Object.values(logs || {}).filter(l => l && l.trim().length > 0).length;
- 
+
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
         <div style={{ padding: "60px 0 100px" }}>
- 
-          {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "48px" }}>
             <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
               Module {mod.number} Complete · Your Arc
             </Tag>
-            <div style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(40px, 6vw, 60px)",
-              color: C.text,
-              lineHeight: 1.05,
-              marginTop: "24px",
-              fontWeight: 400,
-            }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 6vw, 60px)", color: C.text, lineHeight: 1.05, marginTop: "24px", fontWeight: 400 }}>
               {mod.title}
             </div>
-            <div style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "16px",
-              color: C.muted,
-              lineHeight: 1.7,
-              marginTop: "16px",
-            }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: C.muted, lineHeight: 1.7, marginTop: "16px" }}>
               Seven days. One body of work. Read it back.
             </div>
           </div>
- 
-          {/* Key extraction — spike signature / anchor / override script / signal read */}
-          <div style={{
-            background: C.surface,
-            border: `2px solid ${C.border}`,
-            borderLeft: `4px solid ${mod.color}`,
-            padding: "32px 28px",
-            marginBottom: "40px",
-          }}>
-            <div style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "11px",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: mod.color,
-              marginBottom: "10px",
-            }}>
+
+          {/* Key extraction */}
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "32px 28px", marginBottom: "40px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "10px" }}>
               {config.keyDescriptor}
             </div>
-            <div style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "11px",
-              color: C.dim,
-              marginBottom: "18px",
-            }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "18px" }}>
               {config.keyLabel}
             </div>
-            <div style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(22px, 3.5vw, 28px)",
-              color: C.text,
-              lineHeight: 1.4,
-              fontStyle: "italic",
-              whiteSpace: "pre-wrap",
-              fontWeight: 400,
-            }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(22px, 3.5vw, 28px)", color: C.text, lineHeight: 1.4, fontStyle: "italic", whiteSpace: "pre-wrap", fontWeight: 400 }}>
               {keyLog || "(no entry recorded)"}
             </div>
           </div>
- 
-          {/* Day 1 vs Day 7 contrast */}
+
+          {/* Day 1 vs Day 7 */}
           {(day1Log || day7Log) && (
             <div style={{ marginBottom: "40px" }}>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: C.muted,
-                marginBottom: "20px",
-                paddingBottom: "10px",
-                borderBottom: `2px solid ${C.border}`,
-              }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "20px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
                 Day 1 → Day 7
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
                 {day1Log && (
-                  <div style={{
-                    background: C.surface,
-                    border: `2px solid ${C.border}`,
-                    padding: "18px 22px",
-                  }}>
-                    <div style={{
-                      fontFamily: "'DM Mono', monospace",
-                      fontSize: "11px",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      color: C.dim,
-                      marginBottom: "12px",
-                    }}>
-                      Where you started
-                    </div>
-                    <div style={{
-                      fontFamily: "'Syne', sans-serif",
-                      fontSize: "15px",
-                      color: "#C8D0E0",
-                      lineHeight: 1.7,
-                      whiteSpace: "pre-wrap",
-                    }}>
-                      {day1Log}
-                    </div>
+                  <div style={{ background: C.surface, border: `2px solid ${C.border}`, padding: "18px 22px" }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: C.dim, marginBottom: "12px" }}>Where you started</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{day1Log}</div>
                   </div>
                 )}
                 {day7Log && (
-                  <div style={{
-                    background: C.surface,
-                    border: `2px solid ${C.border}`,
-                    borderLeft: `4px solid ${mod.color}`,
-                    padding: "18px 22px",
-                  }}>
-                    <div style={{
-                      fontFamily: "'DM Mono', monospace",
-                      fontSize: "11px",
-                      letterSpacing: "0.15em",
-                      textTransform: "uppercase",
-                      color: mod.color,
-                      marginBottom: "12px",
-                    }}>
-                      Where you ended
-                    </div>
-                    <div style={{
-                      fontFamily: "'Syne', sans-serif",
-                      fontSize: "15px",
-                      color: "#C8D0E0",
-                      lineHeight: 1.7,
-                      whiteSpace: "pre-wrap",
-                    }}>
-                      {day7Log}
-                    </div>
+                  <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "18px 22px" }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: mod.color, marginBottom: "12px" }}>Where you ended</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{day7Log}</div>
                   </div>
                 )}
               </div>
             </div>
           )}
- 
+
           {/* Full Arc */}
           <div style={{ marginBottom: "40px" }}>
-            <div style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "11px",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: C.muted,
-              marginBottom: "20px",
-              paddingBottom: "10px",
-              borderBottom: `2px solid ${C.border}`,
-            }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "20px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
               The Full Arc — All Seven Days
             </div>
             {mod.days.map((dayData, idx) => {
               const log = logs?.[idx];
               if (!log) return null;
               return (
-                <div key={idx} style={{
-                  marginBottom: "20px",
-                  paddingBottom: "20px",
-                  borderBottom: idx < 6 ? `1px solid ${C.border}` : "none",
-                }}>
-                  <div style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: "11px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: C.dim,
-                    marginBottom: "6px",
-                  }}>
+                <div key={idx} style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: idx < 6 ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: C.dim, marginBottom: "6px" }}>
                     Day {dayData.day} — {dayData.title}
                   </div>
-                  <div style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: "13px",
-                    color: mod.color,
-                    fontStyle: "italic",
-                    marginBottom: "10px",
-                  }}>
-                    {dayData.logPrompt}
-                  </div>
-                  <div style={{
-                    fontFamily: "'Syne', sans-serif",
-                    fontSize: "15px",
-                    color: "#B8C0D4",
-                    lineHeight: 1.7,
-                    whiteSpace: "pre-wrap",
-                  }}>
-                    {log}
-                  </div>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: mod.color, fontStyle: "italic", marginBottom: "10px" }}>{dayData.logPrompt}</div>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#B8C0D4", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{log}</div>
                 </div>
               );
             })}
           </div>
- 
-          {/* ─── SYSTEM VERDICT BLOCK (NEW) ─── */}
-          <div style={{
-            background: C.surface,
-            border: `2px solid ${mod.color}`,
-            padding: "32px 28px",
-            marginBottom: "16px",
-          }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                letterSpacing: "0.25em",
-                textTransform: "uppercase",
-                color: mod.color,
-              }}>
+
+          {/* ── SYSTEM VERDICT BLOCK ── */}
+          <div style={{ background: C.surface, border: `2px solid ${mod.color}`, padding: "32px 28px", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: mod.color }}>
                 System Verdict
               </div>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                letterSpacing: "0.15em",
-                textTransform: "uppercase",
-                color: C.done,
-                background: "#091410",
-                border: `1px solid ${C.doneBorder}`,
-                padding: "4px 12px",
-              }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: C.done, background: C.doneDim, border: `1px solid ${C.doneBorder}`, padding: "4px 12px" }}>
                 Evidence Sufficient · {logCount}/7 Days Logged
               </div>
             </div>
- 
-            {/* Installed capability */}
-            <div style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(20px, 3vw, 26px)",
-              color: C.text,
-              lineHeight: 1.4,
-              marginBottom: "20px",
-              fontWeight: 400,
-            }}>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(20px, 3vw, 26px)", color: C.text, lineHeight: 1.4, marginBottom: "20px", fontWeight: 400 }}>
               {config.installedCapability}
             </div>
- 
-            {/* Verdict statement */}
-            <div style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "15px",
-              color: "#A8B4C8",
-              lineHeight: 1.8,
-              borderTop: `1px solid ${C.border}`,
-              paddingTop: "18px",
-            }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#A8B4C8", lineHeight: 1.8, borderTop: `1px solid ${C.border}`, paddingTop: "18px" }}>
               {config.verdictStatement}
             </div>
           </div>
- 
-          {/* Evidence count note */}
-          <div style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: "11px",
-            color: C.dim,
-            marginBottom: "40px",
-            paddingLeft: "4px",
-          }}>
-            {logCount === 7
-              ? "All seven days logged. Full behavioral record confirmed."
-              : `${logCount} of 7 days logged. Partial record.`}
+
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "40px", paddingLeft: "4px" }}>
+            {logCount === 7 ? "All seven days logged. Full behavioral record confirmed." : `${logCount} of 7 days logged.`}
           </div>
- 
-          {/* Direction block */}
-          <div style={{
-            background: C.surface,
-            border: `2px solid ${C.border}`,
-            borderLeft: `4px solid ${C.gold}`,
-            padding: "24px 28px",
-            marginBottom: "40px",
-          }}>
-            <div style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "11px",
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              color: C.gold,
-              marginBottom: "14px",
-            }}>
-              Next
+
+          {/* Direction */}
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "24px 28px", marginBottom: "40px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "14px" }}>Next</div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, lineHeight: 1.7, fontWeight: 500 }}>{config.direction}</div>
+          </div>
+
+          <BtnPrimary onClick={onContinue} full>Mark Module {mod.number} Installed →</BtnPrimary>
+        </div>
+      </Wrap>
+    </div>
+  );
+}
+
+// Reference Card Screen
+function ReferenceCardScreen({ onBack }) {
+  const [copied, setCopied] = useState(false);
+  const cardData = Object.entries(REFERENCE_CARD_CONFIG).map(([moduleId, config]) => ({
+    moduleId, ...config,
+    log: loadModuleLog(moduleId, config.dayIndex),
+  }));
+
+  const handleCopy = () => {
+    const text = [
+      "HS-POS OPERATING REFERENCE — 100 Acrez Holdings, LLC",
+      "",
+      "MIRP REFLEX: NOTICE → DOWNSHIFT → ANCHOR → MOVE",
+      "",
+      ...cardData.map(d => `${d.label.toUpperCase()}\n${d.description}\n${d.log || "(not recorded)"}\n`),
+      "OPERATING LOOP:",
+      "Assess → Regulate → Decide → Enter → Build → Calibrate → Advance or Exit → Review → Update",
+    ].join("\n");
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
+      <Wrap>
+        <div style={{ padding: "60px 0 100px" }}>
+          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "40px", display: "flex", alignItems: "center", gap: "10px" }}>
+            ← Back
+          </div>
+
+          <div style={{ textAlign: "center", marginBottom: "48px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "16px" }}>
+              HS-POS · Operating Reference
             </div>
-            <div style={{
-              fontFamily: "'Syne', sans-serif",
-              fontSize: "17px",
-              color: C.text,
-              lineHeight: 1.7,
-              fontWeight: 500,
-            }}>
-              {config.direction}
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", color: C.text, lineHeight: 1.1, fontWeight: 400, marginBottom: "16px" }}>
+              Your Field Card
+            </div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.muted, lineHeight: 1.7 }}>
+              Built from your logs. Screenshot this and keep it accessible.
             </div>
           </div>
- 
-          <BtnPrimary onClick={onContinue} full>
-            Mark Module {mod.number} Installed →
-          </BtnPrimary>
- 
+
+          {/* MIRP Reflex */}
+          <div style={{ background: C.surface, border: `2px solid ${C.gold}`, padding: "20px 24px", marginBottom: "20px", textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "12px" }}>
+              MIRP Reflex — Fire When Spike Detected
+            </div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "18px", fontWeight: 700, color: C.text, letterSpacing: "0.05em" }}>
+              NOTICE → DOWNSHIFT → ANCHOR → MOVE
+            </div>
+          </div>
+
+          {/* Four log-based fields */}
+          {cardData.map((d) => (
+            <div key={d.moduleId} style={{ background: d.colorDim, border: `1px solid ${d.colorBorder}`, borderLeft: `4px solid ${d.color}`, padding: "20px 24px", marginBottom: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px", gap: "12px", flexWrap: "wrap" }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: d.color }}>
+                  {d.label}
+                </div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: C.dim }}>
+                  {d.description}
+                </div>
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: d.log ? "#D0D8E8" : C.dim, lineHeight: 1.7, fontStyle: d.log ? "normal" : "italic", whiteSpace: "pre-wrap" }}>
+                {d.log || "Not recorded — re-run module to add this entry."}
+              </div>
+            </div>
+          ))}
+
+          {/* Operating Loop */}
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, padding: "20px 24px", marginBottom: "24px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "12px" }}>
+              Operating Loop
+            </div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: "#A8B4C8", lineHeight: 1.9 }}>
+              Assess → Regulate → Decide → Enter →<br/>Build → Calibrate → Advance or Exit → Review → Update
+            </div>
+          </div>
+
+          {/* Re-diagnostic reminder */}
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, textAlign: "center", lineHeight: 1.8, marginBottom: "36px" }}>
+            Re-run the diagnostic in 30 days.<br/>Impediments shift as the system develops.
+          </div>
+
+          {/* Copy button */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+            <button onClick={handleCopy} style={{ background: copied ? C.done : C.gold, color: C.bg, border: "none", padding: "14px 36px", fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s", width: "100%", maxWidth: "360px" }}>
+              {copied ? "✓ Copied to Clipboard" : "Copy Reference Card"}
+            </button>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, textAlign: "center" }}>
+              Screenshot this screen or copy the text above
+            </div>
+          </div>
         </div>
       </Wrap>
     </div>
@@ -1294,165 +1235,80 @@ function SynthesisScreen({ mod, logs, onContinue }) {
 }
 
 // Completion Screen
-function CompletionScreen({ mod, onContinue }) {
+function CompletionScreen({ mod, onContinue, onViewCard }) {
   const nextMod = MODULES[MODULES.findIndex(m => m.id === mod.id) + 1];
   const completedAt = loadModuleCompletionDate(mod.id);
   const isLast = !nextMod;
- 
+
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
         <div style={{ padding: "80px 0 120px" }}>
- 
-          {/* Icon */}
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
-            <div style={{
-              width: "72px",
-              height: "72px",
-              borderRadius: "50%",
-              margin: "0 auto 28px",
-              background: mod.colorDim,
-              border: `3px solid ${mod.color}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "32px",
-              color: mod.color,
-            }}>
-              ✓
-            </div>
-            <div style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "12px",
-              letterSpacing: "0.25em",
-              textTransform: "uppercase",
-              color: C.done,
-              marginBottom: "8px",
-            }}>
+            <div style={{ width: "72px", height: "72px", borderRadius: "50%", margin: "0 auto 28px", background: mod.colorDim, border: `3px solid ${mod.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", color: mod.color }}>✓</div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.done, marginBottom: "8px" }}>
               {isLast ? "System Complete" : `Module ${mod.number} Installed`}
             </div>
             {completedAt && (
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                color: C.dim,
-                marginBottom: "20px",
-              }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "20px" }}>
                 Evidence confirmed · {formatCompletionDate(completedAt)}
               </div>
             )}
           </div>
- 
-          {/* Module title */}
-          <div style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: "clamp(36px, 5vw, 52px)",
-            color: C.text,
-            marginBottom: "20px",
-            lineHeight: 1.1,
-            fontWeight: 400,
-            textAlign: "center",
-          }}>
+
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(36px, 5vw, 52px)", color: C.text, marginBottom: "20px", lineHeight: 1.1, fontWeight: 400, textAlign: "center" }}>
             {isLast ? "The Operating Loop is Installed." : `${mod.title} — Installed`}
           </div>
- 
-          {/* Weight statement */}
-          <div style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: "17px",
-            color: C.muted,
-            lineHeight: 1.8,
-            marginBottom: "40px",
-            textAlign: "center",
-            maxWidth: "480px",
-            margin: "0 auto 40px",
-          }}>
+
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.8, textAlign: "center", maxWidth: "480px", margin: "0 auto 40px" }}>
             {isLast
               ? "Four modules. Four engines. The system is no longer something you're building — it's something you run."
               : `${mod.title} is no longer a concept you understand. It's a pattern you've demonstrated under real conditions.`}
           </div>
- 
-          {/* Next unlock block */}
+
+          {/* Next unlock — only when not last */}
           {nextMod && (
-            <div style={{
-              background: C.surface,
-              border: `2px solid ${C.border}`,
-              borderLeft: `4px solid ${nextMod.color}`,
-              padding: "22px 26px",
-              marginBottom: "40px",
-            }}>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: nextMod.color,
-                marginBottom: "10px",
-              }}>
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${nextMod.color}`, padding: "22px 26px", marginBottom: "40px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: nextMod.color, marginBottom: "10px" }}>
                 Now Unlocked
               </div>
-              <div style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: "17px",
-                color: C.text,
-                fontWeight: 600,
-                marginBottom: "6px",
-              }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, fontWeight: 600, marginBottom: "6px" }}>
                 Module {nextMod.number}: {nextMod.title}
               </div>
-              <div style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: "14px",
-                color: C.muted,
-                lineHeight: 1.6,
-              }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "14px", color: C.muted, lineHeight: 1.6 }}>
                 {nextMod.subtitle}
               </div>
             </div>
           )}
- 
-          {/* Final completion — all four done */}
+
+          {/* Full system block — only when last */}
           {isLast && (
-            <div style={{
-              background: C.surface,
-              border: `2px solid ${C.gold}`,
-              padding: "28px",
-              marginBottom: "40px",
-              textAlign: "center",
-            }}>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "11px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: C.gold,
-                marginBottom: "14px",
-              }}>
+            <div style={{ background: C.surface, border: `2px solid ${C.gold}`, padding: "28px", marginBottom: "40px", textAlign: "center" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "14px" }}>
                 HS-POS · Full System
               </div>
-              <div style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: "15px",
-                color: "#A8B4C8",
-                lineHeight: 1.8,
-              }}>
-                State Regulation → Identity & Foundation → Decision Engine → Signal Calibration.
-                All four engines installed. Re-run the diagnostic in 30 days. The system grows with you.
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#A8B4C8", lineHeight: 1.8 }}>
+                State Regulation → Identity & Foundation → Decision Engine → Signal Calibration. All four engines installed. Re-run the diagnostic in 30 days. The system grows with you.
               </div>
             </div>
           )}
- 
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <BtnPrimary onClick={onContinue}>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+            <BtnPrimary onClick={onContinue} full>
               {isLast ? "Return to Dashboard" : `Begin Module ${nextMod.number} →`}
             </BtnPrimary>
+            {isLast && onViewCard && (
+              <button onClick={onViewCard} style={{ width: "100%", maxWidth: "480px", padding: "14px 24px", background: "transparent", border: `2px solid ${C.gold}`, color: C.gold, fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s" }}>
+                View Your Reference Card →
+              </button>
+            )}
           </div>
- 
         </div>
       </Wrap>
     </div>
   );
 }
+
 // Retry Screen
 function RetryScreen({ mod, logs, onBack }) {
   const day6Log = logs && logs[5];
@@ -1709,7 +1565,16 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const allLogsPresent = [0,1,2,3,4,5,6].every(i => logs[i] && logs[i].trim().length > 0);
   const gateReady = allDaysComplete && allLogsPresent;
 
-  if (view === "completion") return <CompletionScreen mod={mod} onContinue={() => { onComplete(moduleId); onBack(); }} />;
+  if (view === "completion") return (
+    <CompletionScreen
+      mod={mod}
+      onContinue={() => { onComplete(moduleId); onBack(); }}
+      onViewCard={!MODULES[MODULES.findIndex(m => m.id === moduleId) + 1]
+        ? () => setView("referenceCard")
+        : undefined}
+    />
+  );
+  if (view === "referenceCard") return <ReferenceCardScreen onBack={() => { onComplete(moduleId); onBack(); }} />;
   if (view === "retry") return <RetryScreen mod={mod} logs={logs} onBack={() => setView("overview")} />;
   if (view === "synthesis") return <SynthesisScreen mod={mod} logs={logs} onContinue={() => setView("completion")} />;
   if (view === "gate") return <GateScreen mod={mod} logs={logs} onPass={() => { saveModuleCompletion(moduleId); setView("synthesis"); }} onRetry={() => setView("retry")} />;
