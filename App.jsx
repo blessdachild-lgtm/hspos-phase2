@@ -1363,7 +1363,7 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
             <BtnPrimary onClick={onContinue} full>
-              {isLast ? "Return to Dashboard" : `Begin Module ${nextMod.number} →`}
+              {isLast ? "Return to Dashboard" : `Begin Module ${nextMod.number}`}
             </BtnPrimary>
             {isLast && onViewCard && (
               <button onClick={onViewCard} style={{ width: "100%", maxWidth: "480px", padding: "14px 24px", background: "transparent", border: `2px solid ${C.gold}`, color: C.gold, fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s" }}>
