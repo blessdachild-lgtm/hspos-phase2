@@ -472,7 +472,9 @@ function EntryScreen({ onEnter }) {
 }
 
 // Module Select Screen
-function ModuleSelect({ primaryModule, onSelect, completedModules }) {
+function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard }) {
+  const allComplete = MODULES.every(m => completedModules.includes(m.id));
+
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap maxWidth="min(900px, 100%)">
@@ -587,6 +589,72 @@ function ModuleSelect({ primaryModule, onSelect, completedModules }) {
               </div>
             );
           })}
+
+          {/* Reference Card — permanent, appears when all modules complete */}
+          {allComplete && (
+            <div style={{ marginTop: "40px", paddingTop: "40px", borderTop: `2px solid ${C.border}` }}>
+              <div style={{
+                background: C.surface,
+                border: `2px solid ${C.gold}`,
+                padding: "28px 32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "20px",
+              }}>
+                <div>
+                  <div style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "11px",
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    color: C.gold,
+                    marginBottom: "8px",
+                  }}>
+                    Operating Reference
+                  </div>
+                  <div style={{
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: C.text,
+                    marginBottom: "6px",
+                  }}>
+                    Your Field Card
+                  </div>
+                  <div style={{
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: "14px",
+                    color: C.muted,
+                    lineHeight: 1.6,
+                  }}>
+                    Spike signature, identity anchor, override script, signal read — pulled from your logs.
+                  </div>
+                </div>
+                <button
+                  onClick={onViewCard}
+                  style={{
+                    background: "transparent",
+                    border: `2px solid ${C.gold}`,
+                    color: C.gold,
+                    padding: "12px 24px",
+                    fontFamily: "'Syne', sans-serif",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  View Card →
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </Wrap>
     </div>
@@ -1726,10 +1794,11 @@ export default function HSPOSPhase2() {
   }, [primaryModule]);
 
   if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
+  if (screen === "referenceCard") return <ReferenceCardScreen onBack={() => setScreen("dashboard")} />;
   if (activeModule) {
     const isInstalled = completedModules.includes(activeModule);
     if (isInstalled) return <InstalledModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onReRun={handleReRun} />;
     return <ModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onComplete={handleComplete} />;
   }
-  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={setActiveModule} />;
+  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={setActiveModule} onViewCard={() => setScreen("referenceCard")} />;
 }
