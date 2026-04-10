@@ -105,24 +105,32 @@ const SYNTHESIS_CONFIG = {
     keyLabel: "What you named on Day 4",
     keyDescriptor: "Your spike signature",
     direction: "Your spike signature is now named. The next module tests whether your identity holds under that activation.",
+    installedCapability: "You can now detect and move through activation instead of waiting for it to pass.",
+    verdictStatement: "Seven days ago you didn't have a name for what your body does under pressure. Now you do. That's not small — that's the entire foundation the rest of this system runs on.",
   },
   identity: {
     keyDayIndex: 0,
     keyLabel: "What you wrote on Day 1",
     keyDescriptor: "Your identity anchor",
     direction: "Your identity anchor is installed. The next module tests whether you act from it before your override script runs.",
+    installedCapability: "You now have an identity anchor that holds when interest is high and approval is available.",
+    verdictStatement: "Seven days ago your behavior was being calibrated by their reaction. Now you have an internal reference point that doesn't move. That's the difference between performing and operating.",
   },
   decision: {
     keyDayIndex: 1,
     keyLabel: "What you named on Day 2",
     keyDescriptor: "Your override script",
     direction: "Your trigger is loaded. The next module tests whether you can read accurately enough to know when to fire it.",
+    installedCapability: "You now move on pre-loaded triggers instead of in-the-moment deliberation.",
+    verdictStatement: "Seven days ago the window would close before you moved. Now the decision is made before you arrive. That's the only change that matters — and you made it.",
   },
   calibration: {
     keyDayIndex: 4,
     keyLabel: "What you tested on Day 5",
     keyDescriptor: "Your live signal read",
     direction: "All four engines are installed. From here, the work is maintenance, not installation.",
+    installedCapability: "You now read signal patterns instead of moments — and you act on evidence, not hope.",
+    verdictStatement: "Four modules. Twenty-eight days. You came in with a breakdown point and you're leaving with an operating system. The system doesn't end here — this is where it runs on its own.",
   },
 };
 
@@ -965,11 +973,16 @@ function SynthesisScreen({ mod, logs, onContinue }) {
   const keyLog = logs?.[config.keyDayIndex] || "";
   const day1Log = logs?.[0] || "";
   const day7Log = logs?.[6] || "";
-
+ 
+  // Count completed logs for evidence count
+  const logCount = Object.values(logs || {}).filter(l => l && l.trim().length > 0).length;
+ 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
         <div style={{ padding: "60px 0 100px" }}>
+ 
+          {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "48px" }}>
             <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
               Module {mod.number} Complete · Your Arc
@@ -994,7 +1007,8 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               Seven days. One body of work. Read it back.
             </div>
           </div>
-
+ 
+          {/* Key extraction — spike signature / anchor / override script / signal read */}
           <div style={{
             background: C.surface,
             border: `2px solid ${C.border}`,
@@ -1032,7 +1046,8 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               {keyLog || "(no entry recorded)"}
             </div>
           </div>
-
+ 
+          {/* Day 1 vs Day 7 contrast */}
           {(day1Log || day7Log) && (
             <div style={{ marginBottom: "40px" }}>
               <div style={{
@@ -1047,11 +1062,7 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               }}>
                 Day 1 → Day 7
               </div>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "16px",
-              }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
                 {day1Log && (
                   <div style={{
                     background: C.surface,
@@ -1110,7 +1121,8 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               </div>
             </div>
           )}
-
+ 
+          {/* Full Arc */}
           <div style={{ marginBottom: "40px" }}>
             <div style={{
               fontFamily: "'DM Mono', monospace",
@@ -1165,7 +1177,84 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               );
             })}
           </div>
-
+ 
+          {/* ─── SYSTEM VERDICT BLOCK (NEW) ─── */}
+          <div style={{
+            background: C.surface,
+            border: `2px solid ${mod.color}`,
+            padding: "32px 28px",
+            marginBottom: "16px",
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}>
+              <div style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "11px",
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: mod.color,
+              }}>
+                System Verdict
+              </div>
+              <div style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "11px",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: C.done,
+                background: "#091410",
+                border: `1px solid ${C.doneBorder}`,
+                padding: "4px 12px",
+              }}>
+                Evidence Sufficient · {logCount}/7 Days Logged
+              </div>
+            </div>
+ 
+            {/* Installed capability */}
+            <div style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: "clamp(20px, 3vw, 26px)",
+              color: C.text,
+              lineHeight: 1.4,
+              marginBottom: "20px",
+              fontWeight: 400,
+            }}>
+              {config.installedCapability}
+            </div>
+ 
+            {/* Verdict statement */}
+            <div style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: "15px",
+              color: "#A8B4C8",
+              lineHeight: 1.8,
+              borderTop: `1px solid ${C.border}`,
+              paddingTop: "18px",
+            }}>
+              {config.verdictStatement}
+            </div>
+          </div>
+ 
+          {/* Evidence count note */}
+          <div style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "11px",
+            color: C.dim,
+            marginBottom: "40px",
+            paddingLeft: "4px",
+          }}>
+            {logCount === 7
+              ? "All seven days logged. Full behavioral record confirmed."
+              : `${logCount} of 7 days logged. Partial record.`}
+          </div>
+ 
+          {/* Direction block */}
           <div style={{
             background: C.surface,
             border: `2px solid ${C.border}`,
@@ -1193,10 +1282,11 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               {config.direction}
             </div>
           </div>
-
+ 
           <BtnPrimary onClick={onContinue} full>
-            Mark Module {mod.number} Installed
+            Mark Module {mod.number} Installed →
           </BtnPrimary>
+ 
         </div>
       </Wrap>
     </div>
@@ -1207,53 +1297,162 @@ function SynthesisScreen({ mod, logs, onContinue }) {
 function CompletionScreen({ mod, onContinue }) {
   const nextMod = MODULES[MODULES.findIndex(m => m.id === mod.id) + 1];
   const completedAt = loadModuleCompletionDate(mod.id);
+  const isLast = !nextMod;
+ 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
-        <div style={{ padding: "100px 0 120px", textAlign: "center" }}>
-          <div style={{ 
-            width: "72px", 
-            height: "72px", 
-            borderRadius: "50%", 
-            margin: "0 auto 28px", 
-            background: mod.colorDim, 
-            border: `3px solid ${mod.color}`, 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center", 
-            fontSize: "32px", 
-            color: mod.color 
+        <div style={{ padding: "80px 0 120px" }}>
+ 
+          {/* Icon */}
+          <div style={{ textAlign: "center", marginBottom: "40px" }}>
+            <div style={{
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              margin: "0 auto 28px",
+              background: mod.colorDim,
+              border: `3px solid ${mod.color}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "32px",
+              color: mod.color,
+            }}>
+              ✓
+            </div>
+            <div style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "12px",
+              letterSpacing: "0.25em",
+              textTransform: "uppercase",
+              color: C.done,
+              marginBottom: "8px",
+            }}>
+              {isLast ? "System Complete" : `Module ${mod.number} Installed`}
+            </div>
+            {completedAt && (
+              <div style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "11px",
+                color: C.dim,
+                marginBottom: "20px",
+              }}>
+                Evidence confirmed · {formatCompletionDate(completedAt)}
+              </div>
+            )}
+          </div>
+ 
+          {/* Module title */}
+          <div style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "clamp(36px, 5vw, 52px)",
+            color: C.text,
+            marginBottom: "20px",
+            lineHeight: 1.1,
+            fontWeight: 400,
+            textAlign: "center",
           }}>
-            ✓
+            {isLast ? "The Operating Loop is Installed." : `${mod.title} — Installed`}
           </div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.done, marginBottom: "8px" }}>
-            Marked Installed
+ 
+          {/* Weight statement */}
+          <div style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: "17px",
+            color: C.muted,
+            lineHeight: 1.8,
+            marginBottom: "40px",
+            textAlign: "center",
+            maxWidth: "480px",
+            margin: "0 auto 40px",
+          }}>
+            {isLast
+              ? "Four modules. Four engines. The system is no longer something you're building — it's something you run."
+              : `${mod.title} is no longer a concept you understand. It's a pattern you've demonstrated under real conditions.`}
           </div>
-          {completedAt && (
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "20px" }}>
-              Evidence confirmed · {formatCompletionDate(completedAt)}
+ 
+          {/* Next unlock block */}
+          {nextMod && (
+            <div style={{
+              background: C.surface,
+              border: `2px solid ${C.border}`,
+              borderLeft: `4px solid ${nextMod.color}`,
+              padding: "22px 26px",
+              marginBottom: "40px",
+            }}>
+              <div style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "11px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: nextMod.color,
+                marginBottom: "10px",
+              }}>
+                Now Unlocked
+              </div>
+              <div style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: "17px",
+                color: C.text,
+                fontWeight: 600,
+                marginBottom: "6px",
+              }}>
+                Module {nextMod.number}: {nextMod.title}
+              </div>
+              <div style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: "14px",
+                color: C.muted,
+                lineHeight: 1.6,
+              }}>
+                {nextMod.subtitle}
+              </div>
             </div>
           )}
-          <div style={{ 
-            fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(36px, 5vw, 52px)", 
-            color: C.text, 
-            marginBottom: "16px", 
-            lineHeight: 1.1, 
-            fontWeight: 400 
-          }}>
-            {mod.title}
+ 
+          {/* Final completion — all four done */}
+          {isLast && (
+            <div style={{
+              background: C.surface,
+              border: `2px solid ${C.gold}`,
+              padding: "28px",
+              marginBottom: "40px",
+              textAlign: "center",
+            }}>
+              <div style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "11px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.gold,
+                marginBottom: "14px",
+              }}>
+                HS-POS · Full System
+              </div>
+              <div style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: "15px",
+                color: "#A8B4C8",
+                lineHeight: 1.8,
+              }}>
+                State Regulation → Identity & Foundation → Decision Engine → Signal Calibration.
+                All four engines installed. Re-run the diagnostic in 30 days. The system grows with you.
+              </div>
+            </div>
+          )}
+ 
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <BtnPrimary onClick={onContinue}>
+              {isLast ? "Return to Dashboard" : `Begin Module ${nextMod.number} →`}
+            </BtnPrimary>
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "48px" }}>
-            {nextMod ? `Module ${nextMod.number}: ${nextMod.title} is now unlocked.` : "All four execution modules complete. The full operating loop is installed."}
-          </div>
-          <BtnPrimary onClick={onContinue}>{nextMod ? `Begin Module ${nextMod.number}` : "Return to Dashboard"}</BtnPrimary>
+ 
         </div>
       </Wrap>
     </div>
   );
 }
-
 // Retry Screen
 function RetryScreen({ mod, logs, onBack }) {
   const day6Log = logs && logs[5];
