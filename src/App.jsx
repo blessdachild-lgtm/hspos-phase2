@@ -308,6 +308,43 @@ function saveState(state) {
   } catch (e) {}
 }
 
+function loadUserPhone() {
+  const state = loadState();
+  return state?.userPhone || null;
+}
+
+function saveUserPhone(phone, frequency) {
+  const state = loadState() || { modules: {}, completedModules: [] };
+  state.userPhone = phone;
+  state.smsFrequency = frequency;
+  saveState(state);
+}
+
+function loadSmsFrequency() {
+  const state = loadState();
+  return state?.smsFrequency || "daily";
+}
+
+async function sendSMS(phone, message) {
+  try {
+    const res = await fetch("/api/send-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: phone, message }),
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+function buildDailyMessage(moduleId, dayIndex) {
+  const mod = MODULES.find(m => m.id === moduleId);
+  const dayData = mod?.days[dayIndex];
+  const presence = PRESENCE_MESSAGES[moduleId]?.[dayIndex] || "";
+  return `HS-POS · ${mod?.title} · Day ${dayIndex + 1}: ${dayData?.title}\n\n${presence}\n\nhspos-phase2.vercel.app`;
+}
+
 function loadModuleProgress(moduleId) {
   const state = loadState();
   if (!state || !state.modules || !state.modules[moduleId]) {
@@ -572,6 +609,122 @@ function EntryScreen({ onEnter }) {
         }}>
           7-day execution modules. Built to match the diagnostic logic and continue the correction without breaking continuity.<br/>
           Human Social Performance Operating System · 100 Acrez Holdings, LLC
+        </div>
+      </Wrap>
+    </div>
+  );
+}
+
+// Phone Setup Screen
+function PhoneSetupScreen({ onComplete }) {
+  const [phone, setPhone] = useState("");
+  const [frequency, setFrequency] = useState("daily");
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const formatPhone = (val) => {
+    const digits = val.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  };
+
+  const getE164 = (val) => {
+    const digits = val.replace(/\D/g, "");
+    return digits.length === 10 ? `+1${digits}` : null;
+  };
+
+  const handleSubmit = async () => {
+    const e164 = getE164(phone);
+    if (!e164) {
+      setError("Enter a valid 10-digit US phone number.");
+      return;
+    }
+    setSending(true);
+    setError("");
+    const confirmMsg = `HS-POS is set up. You'll receive your daily protocol reminder every morning. Reply STOP anytime to opt out.\n\nhspos-phase2.vercel.app`;
+    const sent = await sendSMS(e164, confirmMsg);
+    setSending(false);
+    if (!sent) {
+      setError("Could not send confirmation SMS. Check your number and try again.");
+      return;
+    }
+    saveUserPhone(e164, frequency);
+    onComplete();
+  };
+
+  const frequencies = [
+    { id: "daily", label: "Every day", note: "Recommended" },
+    { id: "alternate", label: "Every other day", note: "" },
+    { id: "off", label: "Off", note: "" },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
+      <Wrap>
+        <div style={{ padding: "80px 0 100px" }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "24px" }}>
+            Daily Protocol Reminder
+          </div>
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", color: C.text, lineHeight: 1.1, fontWeight: 400, marginBottom: "20px" }}>
+            Stay in the arc.
+          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: C.muted, lineHeight: 1.8, marginBottom: "12px" }}>
+            Each morning you'll receive a text with your protocol reminder for the day. It takes 3 seconds to read. It keeps the thread alive when life gets busy.
+          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "14px", color: C.dim, lineHeight: 1.7, marginBottom: "40px" }}>
+            Your number is used only for HS-POS reminders. Never shared. Reply STOP at any time to opt out.
+          </div>
+
+          {/* Phone input */}
+          <div style={{ marginBottom: "32px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "10px" }}>
+              Your mobile number
+            </div>
+            <input
+              value={phone}
+              onChange={e => { setPhone(formatPhone(e.target.value)); setError(""); }}
+              placeholder="(555) 000-0000"
+              inputMode="numeric"
+              style={{ width: "100%", background: C.surface, border: `2px solid ${error ? "#E8833A" : C.border}`, color: C.text, padding: "16px 20px", fontFamily: "'Syne', sans-serif", fontSize: "18px", outline: "none", letterSpacing: "0.05em" }}
+            />
+            {error && (
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#E8833A", marginTop: "8px" }}>
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Frequency selection */}
+          <div style={{ marginBottom: "40px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "14px" }}>
+              Reminder frequency
+            </div>
+            {frequencies.map(f => (
+              <div key={f.id} onClick={() => setFrequency(f.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", marginBottom: "8px", background: frequency === f.id ? C.surface : "transparent", border: `1px solid ${frequency === f.id ? C.muted : C.border}`, cursor: "pointer", transition: "all 0.15s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "16px", height: "16px", borderRadius: "50%", border: `2px solid ${frequency === f.id ? C.text : C.dim}`, background: frequency === f.id ? C.text : "transparent", transition: "all 0.15s" }} />
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: frequency === f.id ? C.text : C.muted, fontWeight: frequency === f.id ? 600 : 400 }}>
+                    {f.label}
+                  </div>
+                </div>
+                {f.note && (
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: C.gold, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    {f.note}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <BtnPrimary onClick={handleSubmit} disabled={sending} full>
+              {sending ? "Sending confirmation..." : "Set Up Reminders"}
+            </BtnPrimary>
+            <div onClick={onComplete} style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, textAlign: "center", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: "8px" }}>
+              Skip — I'll manage my own schedule
+            </div>
+          </div>
         </div>
       </Wrap>
     </div>
@@ -1715,6 +1868,36 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const resumeMessage = getResumeMessage(daysSince, completedDays.length);
   const isHardReset = daysSince > 21 && completedDays.length > 0;
 
+  // Send daily SMS when user opens module if they haven't received one today
+  useEffect(() => {
+    const phone = loadUserPhone();
+    const frequency = loadSmsFrequency();
+    if (!phone || frequency === "off") return;
+
+    const lastSmsKey = `hspos_last_sms_${moduleId}`;
+    const lastSms = localStorage.getItem(lastSmsKey);
+    const today = new Date().toDateString();
+
+    if (lastSms === today) return; // Already sent today
+
+    // Check frequency — every other day
+    if (frequency === "alternate") {
+      const lastDate = lastSms ? new Date(lastSms) : null;
+      if (lastDate) {
+        const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+        if (diffDays < 2) return;
+      }
+    }
+
+    // Find current active day
+    const currentDayIndex = completedDays.length < 7 ? completedDays.length : 6;
+    const message = buildDailyMessage(moduleId, currentDayIndex);
+
+    sendSMS(phone, message).then(sent => {
+      if (sent) localStorage.setItem(lastSmsKey, today);
+    });
+  }, [moduleId]);
+
   useEffect(() => {
     saveModuleProgress(moduleId, completedDays, logs);
   }, [moduleId, completedDays, logs]);
@@ -1900,6 +2083,7 @@ export default function HSPOSPhase2() {
   const [primaryModule] = useState(() => getModuleFromUrl());
   const [activeModule, setActiveModule] = useState(null);
   const [completedModules, setCompletedModules] = useState(() => loadCompletedModules());
+  const [phoneSetupDone] = useState(() => !!loadUserPhone());
 
   useEffect(() => {
     const styleTag = document.createElement("style");
@@ -1979,11 +2163,21 @@ export default function HSPOSPhase2() {
   }, []);
 
   const handleEnter = useCallback(() => {
+    if (!loadUserPhone()) {
+      setScreen("phoneSetup");
+    } else {
+      setScreen("dashboard");
+      setActiveModule(primaryModule);
+    }
+  }, [primaryModule]);
+
+  const handlePhoneSetupComplete = useCallback(() => {
     setScreen("dashboard");
     setActiveModule(primaryModule);
   }, [primaryModule]);
 
   if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
+  if (screen === "phoneSetup") return <PhoneSetupScreen onComplete={handlePhoneSetupComplete} />;
   if (screen === "referenceCard") return <ReferenceCardScreen onBack={() => setScreen("dashboard")} />;
   if (activeModule) {
     const isInstalled = completedModules.includes(activeModule);
