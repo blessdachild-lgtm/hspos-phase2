@@ -169,6 +169,113 @@ const REFERENCE_CARD_CONFIG = {
   },
 };
 
+// ── SYSTEM PRESENCE MESSAGES ──────────────────────────────────
+const PRESENCE_MESSAGES = {
+  state: [
+    "You're not trying to feel calmer today. You're teaching your body a repeatable baseline. Whether it works or not is irrelevant. Run the cycle.",
+    "If you can't notice state shifts when nothing is at stake, you will miss them when it matters. Today is about noticing, not correcting.",
+    "One cycle before entry. Not ten minutes. Not optimization. Regulation happens before contact or not at all.",
+    "Today you're hunting for your spike signature. When it fires, don't fix it. Name it.",
+    "MIRP must run during the spike, not after. Post-event awareness doesn't count.",
+    "This is a real interaction. Manufactured reps don't install the system.",
+    "You're not proving calm. You're proving recoverability. Catch, downshift, stay in, exit clean.",
+  ],
+  identity: [
+    "Write this down. If it stays in your head, it won't hold under pressure.",
+    "The exact moment the anchor weakens is the data. Don't smooth it. Locate it.",
+    "Today is abstinence. Warmth comes back later. Right now you're isolating the habit.",
+    "Interest is not a cue to escalate. Hold the same pace you had before it appeared.",
+    "Validation today is currency, not comfort. If no one invested, nothing is owed.",
+    "Correct with a pause, not performance. If you have to prove, the anchor slipped.",
+    "Identity stability is proven when the room doesn't reward you.",
+  ],
+  decision: [
+    "Every opening you don't take counts. Avoidance dressed as thinking is still avoidance.",
+    "Find the exact sentence your brain uses. Once named, the script loses leverage.",
+    "Three seconds is not time to decide. It's the window before the script closes it.",
+    "First valid opening. No scanning. No rehearsing. Move.",
+    "Today removes doubt. If the bottleneck was ability, volume would collapse you. It won't.",
+    "State, Identity, Decision all run today. If one engine stalls, the loop breaks.",
+    "Be precise. Which window closed because the script ran?",
+  ],
+  calibration: [
+    "You are not broken. You're biased. Today isolates the distortion.",
+    "If you can't name the signals, you will read emotion instead of evidence.",
+    "No investment today. Accuracy improves when your ego is idle.",
+    "Whatever you read, discount it once. This corrects for overperception.",
+    "One test. One read. Then act or exit. Re-testing is force.",
+    "Advance when signals cluster — not when you feel ready.",
+    "Exit quality reveals calibration quality. Staying too long is misread data.",
+  ],
+};
+
+// ── QUICK LOG REASONS ─────────────────────────────────────────
+const QUICK_LOG_REASONS = [
+  { id: "busy", label: "Busy day" },
+  { id: "no_rep", label: "No rep opportunity" },
+  { id: "energy", label: "Energy low" },
+  { id: "avoidance", label: "Avoidance detected" },
+];
+
+// ── TRANSFORMATION MILESTONES ─────────────────────────────────
+const TRANSFORMATION_MILESTONES = {
+  state: ["Baseline Set", "Sensor Online", "Regulation Before Contact", "Spike Named", "MIRP Live", "Full Loop", "System Test"],
+  identity: ["Anchor Written", "Fault Line Mapped", "Habit Isolated", "Pace Locked", "Validation Rewired", "Loop Monitored", "Identity Stable"],
+  decision: ["Avoidance Mapped", "Script Named", "Trigger Fired", "Satisficing Active", "Volume Proven", "Full Loop", "Window Accountable"],
+  calibration: ["Bias Accepted", "Vocabulary Installed", "Investment Removed", "Discount Applied", "Yellow Tested", "Advance Timed", "Exit Clean"],
+};
+
+// ── GHOST LOG / RESUME LOGIC ──────────────────────────────────
+function getDaysSinceLastActivity(moduleId) {
+  const state = loadState();
+  if (!state || !state.modules || !state.modules[moduleId]) return 0;
+  const m = state.modules[moduleId];
+  const lastActivity = m.lastActivityDate;
+  if (!lastActivity) return 0;
+  const diff = Date.now() - new Date(lastActivity).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+function saveLastActivity(moduleId) {
+  const state = loadState() || { modules: {}, completedModules: [] };
+  if (!state.modules) state.modules = {};
+  if (!state.modules[moduleId]) state.modules[moduleId] = { completedDays: [], logs: {} };
+  state.modules[moduleId].lastActivityDate = new Date().toISOString();
+  saveState(state);
+}
+
+function getResumeMessage(daysSince, dayIndex) {
+  if (daysSince === 0) return null;
+  if (daysSince <= 7) return `You paused for ${daysSince} day${daysSince > 1 ? "s" : ""}. Your logs are below. Resume when ready.`;
+  if (daysSince <= 21) return `You've been away for ${daysSince} days. Read your last log before continuing. The arc is still intact.`;
+  return null; // 21+ triggers hard reset — handled in ModuleView
+}
+
+// ── QUICK LOG STORAGE ─────────────────────────────────────────
+function loadQuickLogCount(moduleId) {
+  const state = loadState();
+  if (!state || !state.modules || !state.modules[moduleId]) return 0;
+  return state.modules[moduleId].quickLogCount || 0;
+}
+
+function saveQuickLogCount(moduleId, count) {
+  const state = loadState() || { modules: {}, completedModules: [] };
+  if (!state.modules) state.modules = {};
+  if (!state.modules[moduleId]) state.modules[moduleId] = { completedDays: [], logs: {} };
+  state.modules[moduleId].quickLogCount = count;
+  saveState(state);
+}
+
+// ── MICRO CHECK-IN STORAGE ────────────────────────────────────
+function saveMicroCheckin(moduleId, word) {
+  const state = loadState() || { modules: {}, completedModules: [] };
+  if (!state.modules) state.modules = {};
+  if (!state.modules[moduleId]) state.modules[moduleId] = { completedDays: [], logs: {} };
+  if (!state.modules[moduleId].microCheckins) state.modules[moduleId].microCheckins = [];
+  state.modules[moduleId].microCheckins.push({ word, date: new Date().toISOString() });
+  saveState(state);
+}
+
 const STORAGE_KEY = "hspos_phase2_v1";
 const VALID_MODULES = ["state", "identity", "decision", "calibration"];
 
@@ -662,174 +769,177 @@ function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard })
 }
 
 // Day View Screen
-function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onAdvance }) {
+function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onAdvance, quickLogCount }) {
   const dayData = mod.days[dayIndex];
   const [log, setLog] = useState(existingLog || "");
   const [saved, setSaved] = useState(!!existingLog);
+  const [showQuickLog, setShowQuickLog] = useState(false);
+  const [quickReason, setQuickReason] = useState(null);
+  const [quickNote, setQuickNote] = useState("");
   const isLastDay = dayIndex === 6;
   const currentPhase = mod.phases.find(p => p.days.includes(dayData.day));
   const canSubmit = log.trim().length > 0;
+  const presenceMessage = PRESENCE_MESSAGES[mod.id]?.[dayIndex] || "";
+  const milestone = TRANSFORMATION_MILESTONES[mod.id]?.[dayIndex] || "";
+
+  // Quick log rules: max 2 per module, not allowed on days 6 or 7
+  const canUseQuickLog = quickLogCount < 2 && dayIndex < 5;
+  const quickLogLimitReached = quickLogCount >= 2;
 
   const handleSubmit = useCallback(() => {
+    saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
     onAdvance(dayIndex);
-  }, [dayIndex, log, onLog, onAdvance]);
+  }, [dayIndex, log, onLog, onAdvance, mod.id]);
+
+  const handleQuickSubmit = useCallback(() => {
+    if (!quickReason || quickNote.trim().length < 5) return;
+    const quickEntry = `[QUICK LOG — ${QUICK_LOG_REASONS.find(r => r.id === quickReason)?.label}]\n${quickNote.trim()}`;
+    saveLastActivity(mod.id);
+    onLog(dayIndex, quickEntry);
+    setSaved(true);
+    onAdvance(dayIndex, true); // true = quick log
+  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
       <Wrap>
         <div style={{ padding: "60px 0 100px" }}>
-          <div onClick={onBack} style={{ 
-            fontFamily: "'DM Mono', monospace", 
-            fontSize: "13px", 
-            color: C.muted, 
-            cursor: "pointer", 
-            marginBottom: "32px", 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "10px" 
-          }}>
+          <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "32px", display: "flex", alignItems: "center", gap: "10px" }}>
             ← {mod.title}
           </div>
-          
+
+          {/* Progress bar */}
           <div style={{ display: "flex", gap: "4px", marginBottom: "28px" }}>
             {mod.days.map((_, i) => (
-              <div key={i} style={{ 
-                flex: 1, 
-                height: "3px", 
-                background: i <= dayIndex || completedDays.includes(i) ? mod.color : C.border, 
-                opacity: i === dayIndex ? 1 : (i < dayIndex || completedDays.includes(i)) ? 0.5 : 0.2 
-              }} />
+              <div key={i} style={{ flex: 1, height: "3px", background: i <= dayIndex || completedDays.includes(i) ? mod.color : C.border, opacity: i === dayIndex ? 1 : (i < dayIndex || completedDays.includes(i)) ? 0.5 : 0.2 }} />
             ))}
           </div>
-          
+
+          {/* System Presence Message */}
+          {presenceMessage && (
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${mod.color}`, padding: "14px 18px", marginBottom: "28px", fontFamily: "'DM Mono', monospace", fontSize: "12px", color: "#A8B4C8", lineHeight: 1.7, letterSpacing: "0.03em" }}>
+              {presenceMessage}
+            </div>
+          )}
+
           <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
             Phase {dayData.phase} — {currentPhase?.name}
           </Tag>
-          
-          <div style={{ 
-            fontFamily: "'DM Serif Display', serif", 
-            fontSize: "clamp(44px, 7vw, 64px)", 
-            color: C.text, 
-            marginTop: "16px", 
-            marginBottom: "6px", 
-            lineHeight: 1.05, 
-            fontWeight: 400 
-          }}>
+
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(44px, 7vw, 64px)", color: C.text, marginTop: "16px", marginBottom: "6px", lineHeight: 1.05, fontWeight: 400 }}>
             Day {dayData.day}
           </div>
-          
-          <div style={{ 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: "24px", 
-            fontWeight: 600, 
-            color: C.text, 
-            marginBottom: "28px" 
-          }}>
+
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "24px", fontWeight: 600, color: C.text, marginBottom: "6px" }}>
             {dayData.title}
           </div>
-          
-          <div style={{ 
-            background: mod.colorDim, 
-            borderLeft: `4px solid ${mod.color}`,
-            padding: "18px 22px", 
-            marginBottom: "32px", 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: "17px", 
-            color: C.text, 
-            lineHeight: 1.65,
-            fontWeight: 500
-          }}>
+
+          {/* Transformation milestone */}
+          {milestone && (
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: C.dim, marginBottom: "28px" }}>
+              Milestone → {milestone}
+            </div>
+          )}
+
+          <div style={{ background: mod.colorDim, borderLeft: `4px solid ${mod.color}`, padding: "18px 22px", marginBottom: "32px", fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, lineHeight: 1.65, fontWeight: 500 }}>
             {dayData.objective}
           </div>
-          
-          <div style={{ 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: "17px", 
-            color: "#D0D8E8", 
-            lineHeight: 1.85, 
-            marginBottom: "36px", 
-            whiteSpace: "pre-line" 
-          }}>
+
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: "#D0D8E8", lineHeight: 1.85, marginBottom: "36px", whiteSpace: "pre-line" }}>
             {dayData.content}
           </div>
-          
-          <div style={{ 
-            background: C.surface, 
-            border: `2px solid ${C.border}`, 
-            borderLeft: `4px solid ${C.gold}`, 
-            padding: "18px 22px", 
-            marginBottom: "36px" 
-          }}>
-            <div style={{ 
-              fontFamily: "'DM Mono', monospace", 
-              fontSize: "11px", 
-              letterSpacing: "0.2em", 
-              textTransform: "uppercase", 
-              color: C.gold, 
-              marginBottom: "10px" 
-            }}>
-              Success Metric
+
+          {/* Daily Checkpoint (renamed from Success Metric) */}
+          <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "18px 22px", marginBottom: "36px" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "6px" }}>
+              Daily Checkpoint
             </div>
-            <div style={{ 
-              fontFamily: "'Syne', sans-serif", 
-              fontSize: "16px", 
-              color: "#C8D0E0", 
-              lineHeight: 1.65, 
-              fontStyle: "italic" 
-            }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: C.dim, marginBottom: "12px", letterSpacing: "0.05em" }}>
+              Yes or No — both are data
+            </div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: "#C8D0E0", lineHeight: 1.65, fontStyle: "italic" }}>
               {dayData.metric}
             </div>
           </div>
-          
-          <div style={{ marginBottom: "36px" }}>
-            <div style={{ 
-              fontFamily: "'DM Mono', monospace", 
-              fontSize: "11px", 
-              letterSpacing: "0.2em", 
-              textTransform: "uppercase", 
-              color: C.muted, 
-              marginBottom: "14px", 
-              background: C.surface, 
-              padding: "12px 20px", 
-              border: `2px solid ${C.border}` 
-            }}>
-              Rep Log
+
+          {/* Standard Rep Log */}
+          {!showQuickLog && (
+            <div style={{ marginBottom: "24px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "14px", background: C.surface, padding: "12px 20px", border: `2px solid ${C.border}` }}>
+                Rep Log
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: mod.color, marginBottom: "14px", fontStyle: "italic", padding: "0 6px" }}>
+                {dayData.logPrompt}
+              </div>
+              <textarea
+                value={log}
+                onChange={(e) => { setLog(e.target.value); setSaved(false); }}
+                placeholder="Record the rep exactly as it happened."
+                style={{ width: "100%", minHeight: "200px", background: C.surface, border: `2px solid ${C.border}`, color: C.text, padding: "18px 22px", fontFamily: "'Syne', sans-serif", fontSize: "16px", lineHeight: 1.7, resize: "vertical", outline: "none" }}
+              />
             </div>
-            <div style={{ 
-              fontFamily: "'Syne', sans-serif", 
-              fontSize: "16px", 
-              color: mod.color, 
-              marginBottom: "14px", 
-              fontStyle: "italic", 
-              padding: "0 6px" 
-            }}>
-              {dayData.logPrompt}
+          )}
+
+          {/* Quick Log Panel */}
+          {showQuickLog && (
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.dim}`, padding: "22px 24px", marginBottom: "24px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "16px" }}>
+                Quick Log — Select a reason
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "20px" }}>
+                {QUICK_LOG_REASONS.map(r => (
+                  <button key={r.id} onClick={() => setQuickReason(r.id)} style={{ padding: "8px 16px", background: quickReason === r.id ? C.dim : "transparent", border: `1px solid ${quickReason === r.id ? C.muted : C.border}`, color: quickReason === r.id ? C.text : C.muted, fontFamily: "'Syne', sans-serif", fontSize: "13px", cursor: "pointer", transition: "all 0.15s" }}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "13px", color: C.muted, marginBottom: "10px" }}>
+                One sentence — what did you notice today?
+              </div>
+              <textarea
+                value={quickNote}
+                onChange={(e) => setQuickNote(e.target.value)}
+                placeholder="One observation from today..."
+                style={{ width: "100%", minHeight: "80px", background: C.bg, border: `2px solid ${C.border}`, color: C.text, padding: "12px 14px", fontFamily: "'Syne', sans-serif", fontSize: "14px", lineHeight: 1.6, resize: "none", outline: "none" }}
+              />
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginTop: "12px" }}>
+                Quick log counts toward your {2 - quickLogCount} remaining for this module. Gate requires full evidence.
+              </div>
             </div>
-            <textarea 
-              value={log} 
-              onChange={(e) => { setLog(e.target.value); setSaved(false); }} 
-              placeholder="Record the rep exactly as it happened." 
-              style={{ 
-                width: "100%", 
-                minHeight: "200px", 
-                background: C.surface, 
-                border: `2px solid ${C.border}`, 
-                color: C.text, 
-                padding: "18px 22px", 
-                fontFamily: "'Syne', sans-serif", 
-                fontSize: "16px", 
-                lineHeight: 1.7, 
-                resize: "vertical", 
-                outline: "none" 
-              }} 
-            />
-          </div>
-          
-          {canSubmit && (
+          )}
+
+          {/* Quick log toggle and limit warning */}
+          {!saved && (
+            <div style={{ marginBottom: "24px" }}>
+              {!showQuickLog && canUseQuickLog && (
+                <div onClick={() => setShowQuickLog(true)} style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                  Can't do a full rep today? Use Quick Log ({2 - quickLogCount} remaining this module)
+                </div>
+              )}
+              {!showQuickLog && quickLogLimitReached && dayIndex < 5 && (
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.gold }}>
+                  Quick log limit reached. Full rep required before gate.
+                </div>
+              )}
+              {showQuickLog && (
+                <div onClick={() => setShowQuickLog(false)} style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                  ← Back to full rep log
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Submit buttons */}
+          {!showQuickLog && canSubmit && (
             <BtnPrimary onClick={handleSubmit} disabled={saved} full>
               {saved ? (isLastDay ? "Opening Gate" : `Loading Day ${dayData.day + 1}`) : (isLastDay ? "Log Rep & Open Gate" : "Log Rep & Continue")}
+            </BtnPrimary>
+          )}
+          {showQuickLog && quickReason && quickNote.trim().length >= 5 && (
+            <BtnPrimary onClick={handleQuickSubmit} full>
+              Submit Quick Log
             </BtnPrimary>
           )}
         </div>
@@ -1596,8 +1706,14 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const [completedDays, setCompletedDays] = useState(initial.completedDays);
   const [logs, setLogs] = useState(initial.logs);
   const [view, setView] = useState("overview");
+  const [quickLogCount, setQuickLogCount] = useState(() => loadQuickLogCount(moduleId));
+  const [showMicroCheckin, setShowMicroCheckin] = useState(false);
+  const [microWord, setMicroWord] = useState("");
+  const [microSaved, setMicroSaved] = useState(false);
 
-  // Auto-day-jump has been removed - user must manually select days from overview
+  const daysSince = getDaysSinceLastActivity(moduleId);
+  const resumeMessage = getResumeMessage(daysSince, completedDays.length);
+  const isHardReset = daysSince > 21 && completedDays.length > 0;
 
   useEffect(() => {
     saveModuleProgress(moduleId, completedDays, logs);
@@ -1605,16 +1721,29 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
   const handleLog = useCallback((dayIdx, text) => {
     setLogs(prev => ({ ...prev, [dayIdx]: text }));
-  }, []);
+    saveLastActivity(moduleId);
+  }, [moduleId]);
 
-  const handleAdvance = useCallback((dayIdx) => {
+  const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
     setCompletedDays(prev => prev.includes(dayIdx) ? prev : [...prev, dayIdx]);
+    if (isQuickLog) {
+      const newCount = quickLogCount + 1;
+      setQuickLogCount(newCount);
+      saveQuickLogCount(moduleId, newCount);
+    }
     if (dayIdx === 6) {
       setTimeout(() => { setCurrentDay(null); setView("gate"); }, 300);
       return;
     }
     setTimeout(() => setCurrentDay(dayIdx + 1), 300);
-  }, []);
+  }, [quickLogCount, moduleId]);
+
+  const handleMicroSave = () => {
+    if (microWord.trim().length > 0) {
+      saveMicroCheckin(moduleId, microWord.trim());
+      setMicroSaved(true);
+    }
+  };
 
   if (!mod) {
     return (
@@ -1623,6 +1752,23 @@ function ModuleView({ moduleId, onBack, onComplete }) {
           <div style={{ padding: "100px 0", textAlign: "center" }}>
             <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 5vw, 36px)", color: C.text, marginBottom: "20px", fontWeight: 400 }}>Module Not Found</div>
             <BtnSecondary onClick={onBack}>← Back to Modules</BtnSecondary>
+          </div>
+        </Wrap>
+      </div>
+    );
+  }
+
+  if (isHardReset) {
+    return (
+      <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
+        <Wrap>
+          <div style={{ padding: "100px 0", textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "24px" }}>System Reset</div>
+            <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 44px)", color: C.text, lineHeight: 1.3, marginBottom: "20px", fontWeight: 400 }}>21 days without a rep.</div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.8, marginBottom: "40px", maxWidth: "480px", margin: "0 auto 40px" }}>
+              The system requires continuity to install. After 21 days, patterns revert. The arc restarts from State Regulation — the foundation everything else depends on.
+            </div>
+            <BtnPrimary onClick={() => { onBack(); }}>Return to Dashboard</BtnPrimary>
           </div>
         </Wrap>
       </div>
@@ -1646,7 +1792,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   if (view === "retry") return <RetryScreen mod={mod} logs={logs} onBack={() => setView("overview")} />;
   if (view === "synthesis") return <SynthesisScreen mod={mod} logs={logs} onContinue={() => setView("completion")} />;
   if (view === "gate") return <GateScreen mod={mod} logs={logs} onPass={() => { saveModuleCompletion(moduleId); setView("synthesis"); }} onRetry={() => setView("retry")} />;
-  if (currentDay !== null) return <DayView key={currentDay} mod={mod} dayIndex={currentDay} existingLog={logs[currentDay]} completedDays={completedDays} onLog={handleLog} onBack={() => setCurrentDay(null)} onAdvance={handleAdvance} />;
+  if (currentDay !== null) return <DayView key={currentDay} mod={mod} dayIndex={currentDay} existingLog={logs[currentDay]} completedDays={completedDays} onLog={handleLog} onBack={() => setCurrentDay(null)} onAdvance={handleAdvance} quickLogCount={quickLogCount} />;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
@@ -1655,19 +1801,26 @@ function ModuleView({ moduleId, onBack, onComplete }) {
           <div onClick={onBack} style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: C.muted, cursor: "pointer", marginBottom: "32px", display: "flex", alignItems: "center", gap: "10px" }}>
             ← All Modules
           </div>
-          
+
+          {/* Ghost Log / Resume Banner */}
+          {resumeMessage && (
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.gold}`, padding: "14px 18px", marginBottom: "24px", fontFamily: "'DM Mono', monospace", fontSize: "12px", color: "#A8B4C8", lineHeight: 1.7 }}>
+              {resumeMessage}
+            </div>
+          )}
+
           <Tag color={mod.color} bgColor={mod.colorDim} borderColor={mod.colorBorder}>
             Module {mod.number} · {mod.engine}
           </Tag>
-          
+
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 6vw, 60px)", color: C.text, marginTop: "20px", marginBottom: "12px", lineHeight: 1.05, fontWeight: 400 }}>
             {mod.title}
           </div>
-          
+
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "40px" }}>
             {mod.subtitle}
           </div>
-          
+
           {mod.phases.map((phase, pi) => (
             <div key={pi} style={{ marginBottom: "28px" }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "14px", paddingBottom: "10px", borderBottom: `2px solid ${C.border}` }}>
@@ -1678,26 +1831,63 @@ function ModuleView({ moduleId, onBack, onComplete }) {
                 const dayData = mod.days[dayIdx];
                 const isDone = completedDays.includes(dayIdx);
                 const isAvailable = dayIdx === 0 || completedDays.includes(dayIdx - 1) || isDone;
+                const milestone = TRANSFORMATION_MILESTONES[mod.id]?.[dayIdx] || "";
                 return (
                   <div key={dayNum} onClick={() => { if (isAvailable) setCurrentDay(dayIdx); }} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 20px", background: isDone ? C.doneDim : "transparent", border: `2px solid ${isDone ? C.doneBorder : C.border}`, marginBottom: "8px", cursor: isAvailable ? "pointer" : "default", opacity: isAvailable ? 1 : 0.5, transition: "all 0.2s" }}>
                     <div style={{ width: "36px", height: "36px", borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isDone ? C.doneDim : C.surface, border: `2px solid ${isDone ? C.doneBorder : C.border}`, fontFamily: "'DM Mono', monospace", fontSize: "12px", color: isDone ? C.done : C.muted }}>
                       {isDone ? "✓" : dayNum}
                     </div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "18px", fontWeight: 600, color: isAvailable ? C.text : C.dim }}>{dayData.title}</div>
-                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginTop: "4px" }}>Day {dayNum}{isDone ? " · Logged" : ""}</div>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: isDone ? C.done : C.dim, marginTop: "4px", letterSpacing: "0.1em" }}>
+                        {isDone ? `✓ ${milestone}` : `Day ${dayNum}`}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           ))}
-          
+
           {gateReady && (
             <div style={{ marginTop: "32px" }}>
               <BtnPrimary onClick={() => setView("gate")} full>Progression Gate</BtnPrimary>
             </div>
           )}
+
+          {/* Micro Check-in */}
+          <div style={{ marginTop: "48px", paddingTop: "32px", borderTop: `1px solid ${C.border}` }}>
+            {!showMicroCheckin && !microSaved && (
+              <div onClick={() => setShowMicroCheckin(true)} style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, cursor: "pointer", letterSpacing: "0.1em", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                Quick check-in — one word for today
+              </div>
+            )}
+            {showMicroCheckin && !microSaved && (
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, padding: "18px 20px" }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: "12px" }}>
+                  One word for today — or "none"
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <input
+                    value={microWord}
+                    onChange={e => setMicroWord(e.target.value)}
+                    placeholder="drift / held / none..."
+                    maxLength={20}
+                    style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.text, padding: "10px 14px", fontFamily: "'Syne', sans-serif", fontSize: "14px", outline: "none" }}
+                  />
+                  <button onClick={handleMicroSave} style={{ background: C.dim, border: "none", color: C.text, padding: "10px 18px", fontFamily: "'Syne', sans-serif", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                    Log
+                  </button>
+                </div>
+              </div>
+            )}
+            {microSaved && (
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.done, letterSpacing: "0.1em" }}>
+                ✓ Check-in logged
+              </div>
+            )}
+          </div>
+
         </div>
       </Wrap>
     </div>
