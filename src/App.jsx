@@ -309,20 +309,30 @@ function saveState(state) {
 }
 
 function loadUserPhone() {
-  const state = loadState();
-  return state?.userPhone || null;
+  try {
+    const state = loadState();
+    return (state && state.userPhone) ? state.userPhone : null;
+  } catch(e) {
+    return null;
+  }
 }
 
 function saveUserPhone(phone, frequency) {
-  const state = loadState() || { modules: {}, completedModules: [] };
-  state.userPhone = phone;
-  state.smsFrequency = frequency;
-  saveState(state);
+  try {
+    const state = loadState() || { modules: {}, completedModules: [] };
+    state.userPhone = phone;
+    state.smsFrequency = frequency || "daily";
+    saveState(state);
+  } catch(e) {}
 }
 
 function loadSmsFrequency() {
-  const state = loadState();
-  return state?.smsFrequency || "daily";
+  try {
+    const state = loadState();
+    return (state && state.smsFrequency) ? state.smsFrequency : "daily";
+  } catch(e) {
+    return "daily";
+  }
 }
 
 async function sendSMS(phone, message) {
@@ -1875,26 +1885,29 @@ function ModuleView({ moduleId, onBack, onComplete }) {
     if (!phone || frequency === "off") return;
 
     const lastSmsKey = `hspos_last_sms_${moduleId}`;
-    const lastSms = localStorage.getItem(lastSmsKey);
     const today = new Date().toDateString();
+
+    let lastSms = null;
+    try {
+      lastSms = localStorage.getItem(lastSmsKey);
+    } catch(e) {}
 
     if (lastSms === today) return; // Already sent today
 
     // Check frequency — every other day
-    if (frequency === "alternate") {
-      const lastDate = lastSms ? new Date(lastSms) : null;
-      if (lastDate) {
-        const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
-        if (diffDays < 2) return;
-      }
+    if (frequency === "alternate" && lastSms) {
+      const diffDays = Math.floor((new Date() - new Date(lastSms)) / (1000 * 60 * 60 * 24));
+      if (diffDays < 2) return;
     }
 
     // Find current active day
-    const currentDayIndex = completedDays.length < 7 ? completedDays.length : 6;
+    const currentDayIndex = Math.min(completedDays.length, 6);
     const message = buildDailyMessage(moduleId, currentDayIndex);
 
     sendSMS(phone, message).then(sent => {
-      if (sent) localStorage.setItem(lastSmsKey, today);
+      if (sent) {
+        try { localStorage.setItem(lastSmsKey, today); } catch(e) {}
+      }
     });
   }, [moduleId]);
 
