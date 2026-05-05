@@ -652,15 +652,35 @@ function PhoneSetupScreen({ onComplete }) {
     }
     setSending(true);
     setError("");
-    const confirmMsg = `HS-POS is set up. You'll receive your daily protocol reminder every morning. Reply STOP anytime to opt out.\n\nhspos-phase2.vercel.app`;
-    const sent = await sendSMS(e164, confirmMsg);
-    setSending(false);
-    if (!sent) {
-      setError("Could not send confirmation SMS. Check your number and try again.");
-      return;
+
+    try {
+      const res = await fetch("/api/register-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phoneNumber: e164,
+          moduleId: loadState()?.primaryModule || "state",
+          frequency,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        saveUserPhone(e164, frequency);
+        onComplete();
+      } else {
+        // Save locally and continue anyway — never block Phase 2
+        saveUserPhone(e164, frequency);
+        onComplete();
+      }
+    } catch (err) {
+      // Network error — save locally and continue
+      saveUserPhone(e164, frequency);
+      onComplete();
+    } finally {
+      setSending(false);
     }
-    saveUserPhone(e164, frequency);
-    onComplete();
   };
 
   const frequencies = [
