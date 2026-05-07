@@ -30,7 +30,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Save user to Upstash Redis
+    // If this is an update call — just update day index and module, don't send confirmation SMS
+    if (req.body.update) {
+      const existing = await redis.hgetall(`user:${formatted}`);
+      if (existing) {
+        await redis.hset(`user:${formatted}`, {
+          ...existing,
+          moduleId: moduleId || existing.moduleId,
+          dayIndex: typeof req.body.dayIndex === 'number' ? req.body.dayIndex : existing.dayIndex,
+          frequency: frequency || existing.frequency,
+        });
+        return res.status(200).json({ success: true, updated: true });
+      }
+    }
+
+    // New registration — save to Upstash
     // Key: user:{phone} — phone is the unique identifier
     await redis.hset(`user:${formatted}`, {
       phoneNumber: formatted,
