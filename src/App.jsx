@@ -355,6 +355,23 @@ function buildDailyMessage(moduleId, dayIndex) {
   return `HS-POS · ${mod?.title} · Day ${dayIndex + 1}: ${dayData?.title}\n\n${presence}\n\nhspos-phase2.vercel.app`;
 }
 
+async function updateUserDayIndex(phone, moduleId, dayIndex) {
+  if (!phone) return;
+  try {
+    await fetch("/api/register-phone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phoneNumber: phone,
+        moduleId,
+        frequency: loadSmsFrequency(),
+        dayIndex,
+        update: true,
+      }),
+    });
+  } catch(e) {}
+}
+
 function loadModuleProgress(moduleId) {
   const state = loadState();
   if (!state || !state.modules || !state.modules[moduleId]) {
@@ -1898,39 +1915,6 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const resumeMessage = getResumeMessage(daysSince, completedDays.length);
   const isHardReset = daysSince > 21 && completedDays.length > 0;
 
-  // Send daily SMS when user opens module if they haven't received one today
-  useEffect(() => {
-    const phone = loadUserPhone();
-    const frequency = loadSmsFrequency();
-    if (!phone || frequency === "off") return;
-
-    const lastSmsKey = `hspos_last_sms_${moduleId}`;
-    const today = new Date().toDateString();
-
-    let lastSms = null;
-    try {
-      lastSms = localStorage.getItem(lastSmsKey);
-    } catch(e) {}
-
-    if (lastSms === today) return; // Already sent today
-
-    // Check frequency — every other day
-    if (frequency === "alternate" && lastSms) {
-      const diffDays = Math.floor((new Date() - new Date(lastSms)) / (1000 * 60 * 60 * 24));
-      if (diffDays < 2) return;
-    }
-
-    // Find current active day
-    const currentDayIndex = Math.min(completedDays.length, 6);
-    const message = buildDailyMessage(moduleId, currentDayIndex);
-
-    sendSMS(phone, message).then(sent => {
-      if (sent) {
-        try { localStorage.setItem(lastSmsKey, today); } catch(e) {}
-      }
-    });
-  }, [moduleId]);
-
   useEffect(() => {
     saveModuleProgress(moduleId, completedDays, logs);
   }, [moduleId, completedDays, logs]);
@@ -1941,7 +1925,12 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   }, [moduleId]);
 
   const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
-    setCompletedDays(prev => prev.includes(dayIdx) ? prev : [...prev, dayIdx]);
+    setCompletedDays(prev => {
+      const updated = prev.includes(dayIdx) ? prev : [...prev, dayIdx];
+      const nextDayIndex = Math.min(updated.length, 6);
+      updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      return updated;
+    });
     if (isQuickLog) {
       const newCount = quickLogCount + 1;
       setQuickLogCount(newCount);
