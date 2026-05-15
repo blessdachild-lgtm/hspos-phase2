@@ -14,10 +14,10 @@ const MODULES = [
     ],
     days: [
       { day: 1, title: "Baseline Calibration", phase: "A", objective: "A52 becomes a daily physical habit, not a concept you know about.", content: "Three A52 sessions today: morning, midday, evening. Ten minutes each. Nasal, diaphragmatic. 5-second inhale, 5-second exhale, 2-second hold.\n\nThe only thing you're tracking is whether you did it. Not how it felt. Not whether you're calmer.", logPrompt: "What did your body feel like before and after each session?", metric: "Did you run all three sessions? Yes or no." },
-      { day: 2, title: "State Awareness Under Zero Pressure", phase: "A", objective: "Build the internal sensor that MIRP requires.", content: "Same three A52 sessions. Add one thing: during normal daily interactions — coworker, cashier, whoever — notice your body state without trying to change it.\n\nShoulders tight? Breathing shallow? Heart rate up? If you can't notice state shifts when nothing is at stake, you won't catch them when something is.", logPrompt: "What physical state did you notice during a normal interaction today? What surprised you?", metric: "Did you notice a body-state shift during at least one low-stakes interaction?" },
+      { day: 2, title: "State Awareness Under Zero Pressure", phase: "A", objective: "Build the internal sensor that MIRP requires.", mirpIntro: true, content: "Same three A52 sessions. Add one thing: during normal daily interactions — coworker, cashier, whoever — notice your body state without trying to change it.\n\nShoulders tight? Breathing shallow? Heart rate up? If you can't notice state shifts when nothing is at stake, you won't catch them when something is.\n\nThis is the sensor MIRP runs on. You can't reset what you can't detect.", logPrompt: "What physical state did you notice during a normal interaction today? What surprised you?", metric: "Did you notice a body-state shift during at least one low-stakes interaction?" },
       { day: 3, title: "Pre-Contact Regulation", phase: "B", objective: "Run A52 under increasing social pressure.", content: "Before any social interaction you'd normally find even mildly activating, run one A52 cycle. One. Not ten minutes — one cycle. 5 in, 5 out, 2 hold.\n\nThen enter. The goal isn't calm. The goal is functional.", logPrompt: "Did you run the cycle? Did you enter? What did your body do when you entered?", metric: "Did you regulate before contact and then act?" },
-      { day: 4, title: "Mid-Contact Awareness", phase: "B", objective: "Find your spike signature.", content: "Same pre-contact cycle. Now add internal monitoring during the interaction. You're not trying to fix anything yet.\n\nYou're learning your spike signature — the specific physical pattern your body runs when state starts to break. For some it's chest tightness. For some it's talking faster. For some it's a jaw clench. Find yours.", logPrompt: "What's your spike signature? When did it fire? What was happening in the interaction at that moment?", metric: "Can you name your spike signature?" },
-      { day: 5, title: "First MIRP Dry Run", phase: "B", objective: "Run MIRP live for the first time.", content: "Deliberately enter a low-stakes social interaction. When you notice your spike signature fire — and it will — run MIRP live:\n\n1. NOTICE — name the spike internally\n2. DOWNSHIFT — one A52 cycle\n3. ANCHOR — what is literally happening right now?\n4. MOVE — one simple question or observation\n\nThe interaction quality doesn't matter.", logPrompt: "Did you catch the spike, run the protocol, and stay in? What happened at each MIRP step?", metric: "Did you run MIRP when the spike fired — not after, through it?" },
+      { day: 4, title: "Mid-Contact Awareness", phase: "B", objective: "Find your spike signature.", content: "Same pre-contact cycle. Now add internal monitoring during the interaction. You're not trying to fix anything yet.\n\nYou're looking for your spike signature — the specific physical pattern your body runs when state starts to break. It's always physical first: jaw clench, chest tightness, tunnel vision, breathing halt, voice pitch rising. Everyone has one. Most people have never named it.\n\nToday's job: catch it firing and name the physical pattern exactly. Not \"I felt anxious\" — that's an interpretation. The signature is what your body actually does.", logPrompt: "What's your spike signature? When did it fire? What was happening in the interaction at that moment?", metric: "Can you name your spike signature?" },
+      { day: 5, title: "First MIRP Dry Run", phase: "B", objective: "Run MIRP live for the first time.", content: "Deliberately enter a low-stakes social interaction. When you notice your spike signature fire — and it will — run MIRP live.\n\nMIRP is a four-step mid-interaction reset protocol. It runs in under 12 seconds:\n\n1. NOTICE — name the spike internally. \"There it is.\" Don't act on it yet.\n2. DOWNSHIFT — one A52 cycle: 5-second inhale, 5-second exhale, 2-second hold. Shoulders down. Jaw loose.\n3. ANCHOR — what is literally happening right now? Not what went wrong — what is present. The room, the person, the actual moment.\n4. MOVE — one simple question or observation. No performance. No over-explanation.\n\nThe interaction quality doesn't matter. The protocol execution does.", logPrompt: "Did you catch the spike, run the protocol, and stay in? What happened at each MIRP step?", metric: "Did you run MIRP when the spike fired — not after, through it?" },
       { day: 6, title: "Sustained Regulation Rep", phase: "C", objective: "Full loop execution.", content: "Enter a real interaction — not manufactured low-stakes, a real one in your actual life.\n\nRun pre-contact A52. Monitor state throughout. If MIRP is needed, fire it.\n\nNew variable: after the interaction, run the full Post-Rep Check.\n• Did I act?\n• Did I stay composed?\n• Did I read correctly?\n• Did I overstay?", logPrompt: "Post-Rep Check answers. What connected between State regulation and the rest of the loop?", metric: "Did you run the full loop — regulate, act, monitor, review?" },
       { day: 7, title: "System Test", phase: "C", objective: "Prove State is installed, not just understood.", content: "Two reps minimum. Different contexts if possible. Full protocol: pre-contact regulation, internal monitoring, MIRP on detection, post-rep review after each.\n\nAt end of day, answer one question honestly:\n\nIs my nervous system still running the show, or am I starting to run it?", logPrompt: "Two reps documented. For each: what happened, did MIRP fire, how did you exit? Final answer: who's running the show?", metric: "At least one rep where you caught a spike, ran MIRP, stayed in, and executed a clean exit." },
     ],
@@ -33,7 +33,7 @@ const MODULES = [
       { name: "Identity Stability Under Pressure", days: [6, 7] },
     ],
     days: [
-      { day: 1, title: "Identity Audit", phase: "A", objective: "Build the identity statement that holds under pressure.", content: "Answer three questions in writing, not in your head.\n\n1. What do you do, and what does it signal about your competence?\n2. What do you value that doesn't change based on who's in front of you?\n3. What's your pattern under pressure — do you chase approval, withdraw, or perform?\n\nThen write the Identity Anchor Statement:\n\"I am [role/competence] who [core value] — and whether this interaction goes well does not change that.\"", logPrompt: "Your Identity Anchor Statement. The three answers that built it.", metric: "Is the statement written and specific — not generic?" },
+      { day: 1, title: "Identity Audit", phase: "A", objective: "Build the identity statement that holds under pressure.", content: "Most behavioral breakdown under pressure isn't a state problem — it's an identity problem. When you don't have a stable internal reference point, your behavior starts calibrating to whoever's in front of you. You perform for the room instead of operating from yourself.\n\nThe Identity Anchor is a single statement that defines who you are independent of how an interaction resolves. It doesn't change based on their reaction. It doesn't depend on a good outcome. It's the fixed point everything else runs on.\n\nBuild yours by answering three questions in writing — not in your head.\n\n1. What do you do, and what does it signal about your competence?\n2. What do you value that doesn't change based on who's in front of you?\n3. What's your pattern under pressure — do you chase approval, withdraw, or perform?\n\nThen write the Identity Anchor Statement:\n\"I am [role/competence] who [core value] — and whether this interaction goes well does not change that.\"", logPrompt: "Your Identity Anchor Statement. The three answers that built it.", metric: "Is the statement written and specific — not generic?" },
       { day: 2, title: "Pressure Test the Anchor", phase: "A", objective: "Map the Identity fault line.", content: "Put the statement somewhere you'll see it. Enter your normal day and notice — when does it feel true and when does it feel like words?\n\nThe gap between those two moments is your Identity fault line. That's where your behavior starts shifting based on external feedback.", logPrompt: "When did the anchor stop feeling true? What triggered the shift? Who was in front of you? What did you want from them?", metric: "Can you identify the exact moment the anchor weakened?" },
       { day: 3, title: "The Withhold Rep", phase: "B", objective: "Break the validation-as-currency habit.", content: "Enter a normal social interaction. One rule: no compliments to relieve tension. Zero.\n\nIf you feel the urge to say something flattering to smooth the moment, that's data — notice it, don't act on it.\n\nYou're training the difference between validation as genuine expression and validation as anxiety management.", logPrompt: "Did the urge fire? When? What were you actually trying to accomplish — connection, or tension relief?", metric: "Did you withhold validation when the urge to smooth fired?" },
       { day: 4, title: "Pace Lock Under Green Signal", phase: "B", objective: "Hold steady when it's working.", content: "Enter an interaction where interest is present. When the green signal hits, your one job: maintain the same pace, tone, and energy you had before the signal arrived.\n\nNo escalation. No spike. No sudden increase in investment. Hold steady when it's working.", logPrompt: "Did you hold pace? If you spiked, identify the exact moment. What did your body do? What did you say that you wouldn't have said thirty seconds earlier?", metric: "Did you maintain baseline energy when positive signals appeared?" },
@@ -53,7 +53,7 @@ const MODULES = [
       { name: "Decision Automaticity", days: [6, 7] },
     ],
     days: [
-      { day: 1, title: "The Hesitation Audit", phase: "A", objective: "Make the avoidance-as-thinking pattern visible.", content: "Carry a simple log. Every time you see a social opening and don't take it, write one line: what the opening was, what your brain told you, and whether you moved.\n\nNo judgment. No correction. You're building the data set.", logPrompt: "How many openings did you see? How many did you take? What's the ratio?", metric: "Did you track honestly — every opening, every decision?" },
+      { day: 1, title: "The Hesitation Audit", phase: "A", objective: "Make the avoidance-as-thinking pattern visible.", content: "Decision breakdown doesn't feel like fear. It feels like thinking. Your brain generates reasons — good ones — for why this specific moment isn't quite right. Too early. Not calibrated yet. She looks busy. Next time.\n\nThat internal narration is your override script. It's the specific language your brain uses to close windows before you move. It's not wisdom — it's avoidance dressed as strategy.\n\nToday's job is to make it visible before you name it.\n\nCarry a simple log. Every time you see a social opening and don't take it, write one line: what the opening was, what your brain told you, and whether you moved.\n\nNo judgment. No correction. You're building the data set.", logPrompt: "How many openings did you see? How many did you take? What's the ratio?", metric: "Did you track honestly — every opening, every decision?" },
       { day: 2, title: "Name the Override Script", phase: "A", objective: "Identify the exact language your brain uses to stop you.", content: "Review yesterday's log. Find the recurring excuse. It's almost always one of four:\n\n• \"Not the right time\"\n• \"She looks busy\"\n• \"I'll do it next time\"\n• \"I need to be in a better state first\"\n\nWrite down your specific override script. The exact language your brain uses.", logPrompt: "What's your override script? Write it verbatim. How many times did it run yesterday?", metric: "Can you name your script on sight?" },
       { day: 3, title: "The 3-Second Rule — First Live Fire", phase: "B", objective: "Replace deliberation with pre-loaded triggers.", content: "One rule today: when you see a valid opening, you have three seconds. Not three seconds to decide — three seconds to move.\n\nRun pre-contact A52. Identify your override script when it fires. Then: 3... 2... 1... move.\n\nYou need one rep today. One. The quality of the interaction is irrelevant.", logPrompt: "Did you fire? If not, what script overrode you? If yes — what happened in your body during those three seconds?", metric: "Did you move within the 3-second window at least once?" },
       { day: 4, title: "Satisficing Under Pressure", phase: "B", objective: "Stop optimizing. Start moving.", content: "Two reps minimum. You are not allowed to optimize your entry. No waiting for the perfect moment. No scanning for a better target. No rehearsing.\n\nSatisfice — take the first action that clears the minimum threshold:\n1. Opening exists\n2. Engagement is socially appropriate\n3. You're regulated enough to function\n\nIf those three are met, you go.", logPrompt: "Did you satisfice or did you catch yourself optimizing? What did the optimization sound like?", metric: "Did you act on the first valid opening without optimizing?" },
@@ -74,7 +74,7 @@ const MODULES = [
     ],
     days: [
       { day: 1, title: "The Inflation Audit", phase: "A", objective: "Accept the overperception bias as neurological fact.", content: "Review your last five social interactions from memory. For each one:\n\n1. What did you read as the signal?\n2. What was the actual outcome?\n\nWhere did your read and reality diverge? You're not broken — you're running uncalibrated hardware.", logPrompt: "For each interaction: the read vs. the result. Where did you inflate? Where were you accurate?", metric: "Can you identify your inflation pattern?" },
-      { day: 2, title: "Signal Vocabulary Installation", phase: "A", objective: "Load the Green/Yellow/Red framework as recognition patterns.", content: "Learn the signal clusters cold:\n\nGREEN: Sustained animated eye contact, body orientation tracking you, re-engagement after pauses, decreasing behavioral variability, increasing signal frequency.\n\nYELLOW: Short answers but not closed, polite but not investing, reactive but not initiating.\n\nRED: Body turned away, one-word responses, no re-engagement, vague future references, reduced eye contact at key moments.", logPrompt: "Can you recite the signal clusters without looking? Write them from memory.", metric: "Are the signal clusters loaded and recallable?" },
+      { day: 2, title: "Signal Vocabulary Installation", phase: "A", objective: "Load the Green/Yellow/Red framework as recognition patterns.", content: "Signal calibration requires a shared vocabulary. Without it, you're reading emotion instead of evidence — which is how overperception bias operates.\n\nLearn these three signal clusters cold. They are observable behaviors, not feelings.\n\nGREEN — genuine investment: Sustained animated eye contact. Body orientation tracking you throughout the interaction. Re-engagement after pauses — they bring it back. Decreasing behavioral variability as the conversation narrows toward you. Increasing signal frequency over time.\n\nYELLOW — ambiguous or partial investment: Short answers but not closed off. Polite but not initiating. Reactive to your input but not generating their own. Maintaining proximity without leaning in.\n\nRED — disengagement: Body turned away or angled toward an exit. One-word responses. No re-engagement after pauses — they let it die. Vague future references (\"we should catch up sometime\"). Reduced eye contact at key moments.\n\nCommit these to memory. Tomorrow you read without being personally invested. Today you install the vocabulary.", logPrompt: "Can you recite the signal clusters without looking? Write them from memory.", metric: "Are the signal clusters loaded and recallable?" },
       { day: 3, title: "Observation-Only Rep", phase: "B", objective: "Read signals without personal investment bias.", content: "Enter a social environment. Do not engage. Watch three separate interactions between other people.\n\nPractice identifying Green, Yellow, and Red signal clusters from the outside. This removes your investment bias from the equation.\n\nYou can read signals accurately when you have no stake. That's the baseline.", logPrompt: "Three observations. Signal reads for each. What pattern told you it was Green, Yellow, or Red?", metric: "Did you correctly identify signal clusters in interactions that didn't involve you?" },
       { day: 4, title: "Live Read With Discount", phase: "B", objective: "Correct for the overperception bias in real time.", content: "Enter a real interaction. Full stack — A52, Identity Anchor, 3-second trigger.\n\nNew variable: whatever interest level you read, discount it one notch.\n\nGreen → operate as strong Yellow\nYellow → operate as soft Red\nRed → exit immediately\n\nYou're not being pessimistic — you're correcting for documented neurological bias.", logPrompt: "What did you read? What did you discount to? What was the actual outcome? Was the discounted read more accurate?", metric: "Was the discounted read closer to reality than your initial read?" },
       { day: 5, title: "The Yellow Test", phase: "B", objective: "Know when to push once and when to leave.", content: "Stay in a Yellow-signal interaction long enough to test once. One low-stakes direct invitation or one clear question that requires investment to answer.\n\nIf signal upgrades to Green → continue.\nIf stays Yellow or drops to Red → exit clean, immediately.\n\nNo second test. One test. One read. Then decide.", logPrompt: "What was the Yellow signal? What test did you run? What happened? Did you honor the result?", metric: "Did you test once and honor the result — no second chances?" },
@@ -505,6 +505,97 @@ function BtnSecondary({ children, onClick, full = false, style = {} }) {
     >
       {children}
     </button>
+  );
+}
+
+// Day Close Screen — separates logging from day completion
+const DAY_CLOSE_CONFIG = {
+  state: [
+    { installed: "Baseline set.", watchFor: "Tomorrow: notice state shifts during normal interactions — no correction, just detection." },
+    { installed: "Internal sensor activated.", watchFor: "Tomorrow: you regulate before contact. One cycle, then enter." },
+    { installed: "Pre-contact regulation executed.", watchFor: "Tomorrow: stay in longer. You're looking for the spike signature." },
+    { installed: "Spike signature identified.", watchFor: "Tomorrow: MIRP runs live. Catch it firing and run the protocol through it." },
+    { installed: "MIRP executed live.", watchFor: "Tomorrow: full loop — real interaction, full protocol, post-rep check." },
+    { installed: "Full loop executed.", watchFor: "Tomorrow: two reps. Different contexts. Final system test." },
+    { installed: "System test complete.", watchFor: "Gate opens now. Evidence, not momentum." },
+  ],
+  identity: [
+    { installed: "Identity anchor written.", watchFor: "Tomorrow: wear it into your day and notice when it stops feeling true." },
+    { installed: "Fault line mapped.", watchFor: "Tomorrow: no compliments to relieve tension. Observe the urge." },
+    { installed: "Validation habit isolated.", watchFor: "Tomorrow: hold baseline energy when interest appears. No escalation." },
+    { installed: "Pace locked under signal.", watchFor: "Tomorrow: validation only as exchange for demonstrated investment." },
+    { installed: "Validation rewired.", watchFor: "Tomorrow: full loop with identity monitoring from entry to exit." },
+    { installed: "Identity monitored through full loop.", watchFor: "Tomorrow: prove stability when the room stops rewarding you." },
+    { installed: "Identity stability proven.", watchFor: "Gate opens now. Evidence, not momentum." },
+  ],
+  decision: [
+    { installed: "Hesitation data collected.", watchFor: "Tomorrow: name the override script — the exact language your brain uses." },
+    { installed: "Override script named.", watchFor: "Tomorrow: 3-second trigger. When you see the opening, you have three seconds to move." },
+    { installed: "3-second trigger fired.", watchFor: "Tomorrow: satisficing active. First valid opening, no scanning." },
+    { installed: "Satisficing installed.", watchFor: "Tomorrow: volume day. Multiple reps. Prove the bottleneck isn't ability." },
+    { installed: "Volume proven.", watchFor: "Tomorrow: full loop — all three engines running simultaneously." },
+    { installed: "Full loop executed.", watchFor: "Tomorrow: accountability test. Track every window. No excuses." },
+    { installed: "Decision accountability logged.", watchFor: "Gate opens now. Evidence, not momentum." },
+  ],
+  calibration: [
+    { installed: "Inflation pattern identified.", watchFor: "Tomorrow: learn the signal vocabulary cold. Green, Yellow, Red — observable behaviors, not feelings." },
+    { installed: "Signal vocabulary installed.", watchFor: "Tomorrow: observation-only. Read three interactions you're not in." },
+    { installed: "Observation baseline set.", watchFor: "Tomorrow: live read with discount. Whatever you read, drop it one notch." },
+    { installed: "Discount applied.", watchFor: "Tomorrow: the Yellow test. Test once. Honor the result. No second chances." },
+    { installed: "Yellow test executed.", watchFor: "Tomorrow: advance timing. Cluster required — not a flash." },
+    { installed: "Advance timing calibrated.", watchFor: "Tomorrow: clean exit test. Exit quality reveals calibration quality." },
+    { installed: "Clean exit logged.", watchFor: "Gate opens now. Evidence, not momentum." },
+  ],
+};
+
+function DayCloseScreen({ mod, dayIndex, isLastDay, onContinue }) {
+  const config = DAY_CLOSE_CONFIG[mod.id]?.[dayIndex];
+  const [fade, setFade] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFade(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div style={{ minHeight: "100vh", width: "100%", background: C.bg, opacity: fade ? 1 : 0, transition: "opacity 0.5s ease" }}>
+      <Wrap>
+        <div style={{ padding: "80px 0 100px", display: "flex", flexDirection: "column", alignItems: "flex-start", minHeight: "100vh", justifyContent: "center" }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: mod.color, marginBottom: "16px" }}>
+            Day {dayIndex + 1} · {mod.title}
+          </div>
+
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(36px, 5vw, 52px)", color: C.text, lineHeight: 1.1, fontWeight: 400, marginBottom: "32px" }}>
+            Logged.
+          </div>
+
+          {config && (
+            <>
+              <div style={{ background: mod.colorDim, border: `2px solid ${mod.colorBorder}`, borderLeft: `4px solid ${mod.color}`, padding: "20px 24px", marginBottom: "20px", width: "100%", boxSizing: "border-box" }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "10px" }}>
+                  What just got installed
+                </div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, lineHeight: 1.65, fontWeight: 500 }}>
+                  {config.installed}
+                </div>
+              </div>
+
+              <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "20px 24px", marginBottom: "40px", width: "100%", boxSizing: "border-box" }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "10px" }}>
+                  {isLastDay ? "Gate" : "Watch for tomorrow"}
+                </div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "16px", color: "#C8D0E0", lineHeight: 1.7 }}>
+                  {config.watchFor}
+                </div>
+              </div>
+            </>
+          )}
+
+          <BtnPrimary onClick={onContinue} full>
+            {isLastDay ? "Open Gate →" : `Continue to Day ${dayIndex + 2} →`}
+          </BtnPrimary>
+        </div>
+      </Wrap>
+    </div>
   );
 }
 
@@ -973,6 +1064,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
   const dayData = mod.days[dayIndex];
   const [log, setLog] = useState(existingLog || "");
   const [saved, setSaved] = useState(!!existingLog);
+  const [showDayClose, setShowDayClose] = useState(false);
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [quickReason, setQuickReason] = useState(null);
   const [quickNote, setQuickNote] = useState("");
@@ -990,8 +1082,12 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
+    setShowDayClose(true);
+  }, [dayIndex, log, onLog, mod.id]);
+
+  const handleDayCloseConfirm = useCallback(() => {
     onAdvance(dayIndex);
-  }, [dayIndex, log, onLog, onAdvance, mod.id]);
+  }, [dayIndex, onAdvance]);
 
   const handleQuickSubmit = useCallback(() => {
     if (!quickReason || quickNote.trim().length < 5) return;
@@ -999,8 +1095,19 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, quickEntry);
     setSaved(true);
-    onAdvance(dayIndex, true); // true = quick log
-  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
+    setShowDayClose(true);
+  }, [quickReason, quickNote, dayIndex, onLog, mod.id]);
+
+  if (showDayClose) {
+    return (
+      <DayCloseScreen
+        mod={mod}
+        dayIndex={dayIndex}
+        isLastDay={isLastDay}
+        onContinue={handleDayCloseConfirm}
+      />
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
@@ -1050,6 +1157,41 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: "#D0D8E8", lineHeight: 1.85, marginBottom: "36px", whiteSpace: "pre-line" }}>
             {dayData.content}
           </div>
+
+          {/* MIRP Definition Block — shown only on first introduction */}
+          {dayData.mirpIntro && (
+            <div style={{ background: C.surface, border: `2px solid ${mod.colorBorder}`, borderLeft: `4px solid ${mod.color}`, padding: "22px 26px", marginBottom: "36px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: mod.color, marginBottom: "14px" }}>
+                What is MIRP?
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.text, fontWeight: 600, marginBottom: "12px" }}>
+                Mid-Interaction Reset Protocol
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.75, marginBottom: "18px" }}>
+                A four-step protocol you run in under 12 seconds when your nervous system spikes during an interaction. It doesn't end the interaction — it resets your operating state inside it.
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {[
+                  { step: "NOTICE", def: "Name the spike internally. \"There it is.\" Don't act on it yet." },
+                  { step: "DOWNSHIFT", def: "One A52 cycle: 5-second inhale, 5-second exhale, 2-second hold. Shoulders down." },
+                  { step: "ANCHOR", def: "What is literally happening right now? Not what went wrong — what is present." },
+                  { step: "MOVE", def: "One simple question or observation. No performance. No explanation." },
+                ].map(({ step, def }) => (
+                  <div key={step} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.15em", color: mod.color, minWidth: "90px", paddingTop: "2px", fontWeight: 500 }}>
+                      {step}
+                    </div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "14px", color: "#A8B4C8", lineHeight: 1.65 }}>
+                      {def}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginTop: "16px", paddingTop: "14px", borderTop: `1px solid ${C.border}` }}>
+                You won't run this until Day 5. Today you're building the sensor it depends on.
+              </div>
+            </div>
+          )}
 
           {/* Daily Checkpoint (renamed from Success Metric) */}
           <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "18px 22px", marginBottom: "36px" }}>
@@ -1134,7 +1276,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
           {/* Submit buttons */}
           {!showQuickLog && canSubmit && (
             <BtnPrimary onClick={handleSubmit} disabled={saved} full>
-              {saved ? (isLastDay ? "Opening Gate" : `Loading Day ${dayData.day + 1}`) : (isLastDay ? "Log Rep & Open Gate" : "Log Rep & Continue")}
+              {saved ? "Logged ✓" : "Log Rep & Continue"}
             </BtnPrimary>
           )}
           {showQuickLog && quickReason && quickNote.trim().length >= 5 && (
@@ -1164,10 +1306,10 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
 
   const gateConfig = {
     state: {
-      signatureLabel: "Spike signature",
-      signatureHint: "Name the exact physical pattern that fired.",
-      actionLabel: "Protocol execution",
-      actionHint: "What did you do when it fired? Name the steps you actually ran.",
+      signatureLabel: "Your spike signature",
+      signatureHint: "Write the exact physical pattern your body runs under pressure — jaw, breath, vision, posture. Use the language you used in your Day 4 log.",
+      actionLabel: "How you ran MIRP",
+      actionHint: "Walk through the four steps — NOTICE, DOWNSHIFT, ANCHOR, MOVE — and what actually happened at each one.",
       checklist: {
         repsComplete: "I completed the required Day 6 and Day 7 reps.",
         protocolExecuted: "I ran MIRP during a live spike, not after the fact.",
@@ -1176,10 +1318,10 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
       },
     },
     identity: {
-      signatureLabel: "Identity shift",
-      signatureHint: "Name the exact moment your behavior bent toward approval.",
-      actionLabel: "Correction method",
-      actionHint: "What did you do when you caught the shift?",
+      signatureLabel: "Your identity anchor statement",
+      signatureHint: "Write the exact statement you built on Day 1. Then describe the moment it weakened — who was in front of you and what shifted.",
+      actionLabel: "How you corrected the shift",
+      actionHint: "What did you do when you caught the anchor slipping? Pause, breath, return to baseline — describe what actually happened.",
       checklist: {
         repsComplete: "I completed the required Day 6 and Day 7 reps.",
         protocolExecuted: "I corrected a shift without performing harder.",
@@ -1188,10 +1330,10 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
       },
     },
     decision: {
-      signatureLabel: "Override script",
-      signatureHint: "Write the exact language your brain used to delay action.",
-      actionLabel: "Trigger fired",
-      actionHint: "What did you do when the script fired?",
+      signatureLabel: "Your override script",
+      signatureHint: "Write the exact language your brain used to delay action — verbatim, the way you wrote it on Day 2.",
+      actionLabel: "How the 3-second trigger fired",
+      actionHint: "Describe a specific moment: the opening appeared, the script tried to run, and what you did in those three seconds.",
       checklist: {
         repsComplete: "I completed the required Day 6 and Day 7 reps.",
         protocolExecuted: "I moved on valid openings using the preloaded trigger.",
@@ -1200,10 +1342,10 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
       },
     },
     calibration: {
-      signatureLabel: "Signal pattern",
-      signatureHint: "Name the clustered signals you observed, not a single moment.",
-      actionLabel: "Decision rule",
-      actionHint: "What did you do based on the pattern you observed?",
+      signatureLabel: "The signal cluster you read",
+      signatureHint: "Describe a specific interaction using the Green/Yellow/Red vocabulary — what behaviors told you which cluster it was.",
+      actionLabel: "The decision you made based on it",
+      actionHint: "What did you do when you read the cluster — advance, test once, or exit? Did you honor the read or push past it?",
       checklist: {
         repsComplete: "I completed the required Day 6 and Day 7 reps.",
         protocolExecuted: "I tested once or advanced only on earned evidence.",
@@ -1926,9 +2068,13 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
   const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
     setCompletedDays(prev => {
-      const updated = prev.includes(dayIdx) ? prev : [...prev, dayIdx];
-      const nextDayIndex = Math.min(updated.length, 6);
-      updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      const isNew = !prev.includes(dayIdx);
+      const updated = isNew ? [...prev, dayIdx] : prev;
+      // Only sync day index to Upstash when genuinely completing a new day
+      if (isNew) {
+        const nextDayIndex = Math.min(updated.length, 6);
+        updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      }
       return updated;
     });
     if (isQuickLog) {
