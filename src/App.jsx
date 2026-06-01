@@ -283,7 +283,13 @@ function getModuleFromUrl() {
   if (typeof window === "undefined") return "state";
   const params = new URLSearchParams(window.location.search);
   const moduleFromUrl = params.get("module");
-  return VALID_MODULES.includes(moduleFromUrl) ? moduleFromUrl : "state";
+  if (VALID_MODULES.includes(moduleFromUrl)) return moduleFromUrl;
+  // Fall back to active module from saved state
+  const state = loadState();
+  if (state && state.primaryModule && VALID_MODULES.includes(state.primaryModule)) {
+    return state.primaryModule;
+  }
+  return "state";
 }
 
 function loadState() {
@@ -1082,12 +1088,14 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
+    onAdvance(dayIndex);
     setShowDayClose(true);
-  }, [dayIndex, log, onLog, mod.id]);
+  }, [dayIndex, log, onLog, onAdvance, mod.id]);
 
   const handleDayCloseConfirm = useCallback(() => {
-    onAdvance(dayIndex);
-  }, [dayIndex, onAdvance]);
+    // Day already marked complete on submit — close screen is display only
+    // Navigation already handled by onAdvance above
+  }, []);
 
   const handleQuickSubmit = useCallback(() => {
     if (!quickReason || quickNote.trim().length < 5) return;
@@ -1095,8 +1103,9 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, quickEntry);
     setSaved(true);
+    onAdvance(dayIndex, true);
     setShowDayClose(true);
-  }, [quickReason, quickNote, dayIndex, onLog, mod.id]);
+  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
 
   if (showDayClose) {
     return (
@@ -1104,7 +1113,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         mod={mod}
         dayIndex={dayIndex}
         isLastDay={isLastDay}
-        onContinue={handleDayCloseConfirm}
+        onContinue={() => setShowDayClose(false)}
       />
     );
   }
@@ -1278,6 +1287,11 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
             <BtnPrimary onClick={handleSubmit} disabled={saved} full>
               {saved ? "Logged ✓" : "Log Rep & Continue"}
             </BtnPrimary>
+          )}
+          {!showQuickLog && !canSubmit && (
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: C.dim, textAlign: "center", padding: "16px 0" }}>
+              Add your rep log above to continue.
+            </div>
           )}
           {showQuickLog && quickReason && quickNote.trim().length >= 5 && (
             <BtnPrimary onClick={handleQuickSubmit} full>
@@ -2168,9 +2182,21 @@ function ModuleView({ moduleId, onBack, onComplete }) {
             {mod.title}
           </div>
 
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "40px" }}>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.7, marginBottom: "28px" }}>
             {mod.subtitle}
           </div>
+
+          {/* Field execution expectation — shown before Day 1 only */}
+          {completedDays.length === 0 && (
+            <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${mod.color}`, padding: "18px 22px", marginBottom: "40px" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: mod.color, marginBottom: "10px" }}>
+                Before You Begin
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#C8D0E0", lineHeight: 1.75 }}>
+                This module requires live execution in real environments. Each day has a field rep — an actual interaction, not a reflection exercise. Documentation without the rep doesn't install the system. If you don't have an opportunity for a real interaction on a given day, use the Quick Log. But the reps are the work.
+              </div>
+            </div>
+          )}
 
           {mod.phases.map((phase, pi) => (
             <div key={pi} style={{ marginBottom: "28px" }}>
@@ -2339,6 +2365,14 @@ export default function HSPOSPhase2() {
     }
   }, [primaryModule]);
 
+  const handleSelectModule = useCallback((moduleId) => {
+    // Save active module so SMS link returns to correct place
+    const state = loadState() || { modules: {}, completedModules: [] };
+    state.primaryModule = moduleId;
+    saveState(state);
+    setActiveModule(moduleId);
+  }, []);
+
   const handlePhoneSetupComplete = useCallback(() => {
     setScreen("dashboard");
     setActiveModule(primaryModule);
@@ -2352,5 +2386,5 @@ export default function HSPOSPhase2() {
     if (isInstalled) return <InstalledModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onReRun={handleReRun} />;
     return <ModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onComplete={handleComplete} />;
   }
-  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={setActiveModule} onViewCard={() => setScreen("referenceCard")} />;
+  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={handleSelectModule} onViewCard={() => setScreen("referenceCard")} />;
 }
