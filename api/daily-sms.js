@@ -68,7 +68,7 @@ function buildMessage(moduleId, dayIndex) {
   const dayTitle = DAY_TITLES[mod]?.[day] || `Day ${day + 1}`;
   const presence = PRESENCE_MESSAGES[mod]?.[day] || '';
 
-  return `HS-POS · ${title} · Day ${day + 1}: ${dayTitle}\n\n${presence}\n\nhspos-phase2.vercel.app`;
+  return `HS-POS · ${title} · Day ${day + 1}: ${dayTitle}\n\n${presence}\n\nhspos-phase2.vercel.app?module=${mod}`;
 }
 
 export default async function handler(req, res) {
