@@ -1088,14 +1088,12 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
-    onAdvance(dayIndex);
     setShowDayClose(true);
-  }, [dayIndex, log, onLog, onAdvance, mod.id]);
+  }, [dayIndex, log, onLog, mod.id]);
 
   const handleDayCloseConfirm = useCallback(() => {
-    // Day already marked complete on submit — close screen is display only
-    // Navigation already handled by onAdvance above
-  }, []);
+    onAdvance(dayIndex);
+  }, [dayIndex, onAdvance]);
 
   const handleQuickSubmit = useCallback(() => {
     if (!quickReason || quickNote.trim().length < 5) return;
@@ -1103,9 +1101,8 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, quickEntry);
     setSaved(true);
-    onAdvance(dayIndex, true);
     setShowDayClose(true);
-  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
+  }, [quickReason, quickNote, dayIndex, onLog, mod.id]);
 
   if (showDayClose) {
     return (
@@ -1113,7 +1110,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         mod={mod}
         dayIndex={dayIndex}
         isLastDay={isLastDay}
-        onContinue={() => setShowDayClose(false)}
+        onContinue={handleDayCloseConfirm}
       />
     );
   }
@@ -2078,19 +2075,18 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const handleLog = useCallback((dayIdx, text) => {
     setLogs(prev => ({ ...prev, [dayIdx]: text }));
     saveLastActivity(moduleId);
+    // Mark day complete immediately when log is saved — not gated on close screen
+    setCompletedDays(prev => {
+      const isNew = !prev.includes(dayIdx);
+      if (!isNew) return prev;
+      const updated = [...prev, dayIdx];
+      const nextDayIndex = Math.min(updated.length, 6);
+      updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      return updated;
+    });
   }, [moduleId]);
 
   const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
-    setCompletedDays(prev => {
-      const isNew = !prev.includes(dayIdx);
-      const updated = isNew ? [...prev, dayIdx] : prev;
-      // Only sync day index to Upstash when genuinely completing a new day
-      if (isNew) {
-        const nextDayIndex = Math.min(updated.length, 6);
-        updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
-      }
-      return updated;
-    });
     if (isQuickLog) {
       const newCount = quickLogCount + 1;
       setQuickLogCount(newCount);
