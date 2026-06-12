@@ -358,7 +358,7 @@ function buildDailyMessage(moduleId, dayIndex) {
   const mod = MODULES.find(m => m.id === moduleId);
   const dayData = mod?.days[dayIndex];
   const presence = PRESENCE_MESSAGES[moduleId]?.[dayIndex] || "";
-  return `HS-POS · ${mod?.title} · Day ${dayIndex + 1}: ${dayData?.title}\n\n${presence}\n\nhspos-phase2.vercel.app`;
+  return `HS-POS · ${mod?.title} · Day ${dayIndex + 1}: ${dayData?.title}\n\n${presence}\n\nhspos-phase2.vercel.app?module=${moduleId}`;
 }
 
 async function updateUserDayIndex(phone, moduleId, dayIndex) {
@@ -1088,12 +1088,14 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
+    onAdvance(dayIndex);
     setShowDayClose(true);
-  }, [dayIndex, log, onLog, mod.id]);
+  }, [dayIndex, log, onLog, onAdvance, mod.id]);
 
   const handleDayCloseConfirm = useCallback(() => {
-    onAdvance(dayIndex);
-  }, [dayIndex, onAdvance]);
+    // Day already marked complete on submit — close screen is display only
+    // Navigation already handled by onAdvance above
+  }, []);
 
   const handleQuickSubmit = useCallback(() => {
     if (!quickReason || quickNote.trim().length < 5) return;
@@ -1101,8 +1103,9 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, quickEntry);
     setSaved(true);
+    onAdvance(dayIndex, true);
     setShowDayClose(true);
-  }, [quickReason, quickNote, dayIndex, onLog, mod.id]);
+  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
 
   if (showDayClose) {
     return (
@@ -1110,7 +1113,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         mod={mod}
         dayIndex={dayIndex}
         isLastDay={isLastDay}
-        onContinue={handleDayCloseConfirm}
+        onContinue={() => setShowDayClose(false)}
       />
     );
   }
@@ -2075,10 +2078,9 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const handleLog = useCallback((dayIdx, text) => {
     setLogs(prev => ({ ...prev, [dayIdx]: text }));
     saveLastActivity(moduleId);
-    // Mark day complete immediately when log is saved — not gated on close screen
+    // Mark day complete immediately when log is saved — not gated on close screen tap
     setCompletedDays(prev => {
-      const isNew = !prev.includes(dayIdx);
-      if (!isNew) return prev;
+      if (prev.includes(dayIdx)) return prev;
       const updated = [...prev, dayIdx];
       const nextDayIndex = Math.min(updated.length, 6);
       updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
@@ -2087,6 +2089,16 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   }, [moduleId]);
 
   const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
+    setCompletedDays(prev => {
+      const isNew = !prev.includes(dayIdx);
+      const updated = isNew ? [...prev, dayIdx] : prev;
+      // Only sync day index to Upstash when genuinely completing a new day
+      if (isNew) {
+        const nextDayIndex = Math.min(updated.length, 6);
+        updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      }
+      return updated;
+    });
     if (isQuickLog) {
       const newCount = quickLogCount + 1;
       setQuickLogCount(newCount);
@@ -2357,12 +2369,13 @@ export default function HSPOSPhase2() {
       setScreen("phoneSetup");
     } else {
       setScreen("dashboard");
-      setActiveModule(primaryModule);
+      // If arriving via SMS link for an already-installed module, land on dashboard
+      const alreadyInstalled = completedModules.includes(primaryModule);
+      setActiveModule(alreadyInstalled ? null : primaryModule);
     }
-  }, [primaryModule]);
+  }, [primaryModule, completedModules]);
 
   const handleSelectModule = useCallback((moduleId) => {
-    // Save active module so SMS link returns to correct place
     const state = loadState() || { modules: {}, completedModules: [] };
     state.primaryModule = moduleId;
     saveState(state);
@@ -2371,8 +2384,9 @@ export default function HSPOSPhase2() {
 
   const handlePhoneSetupComplete = useCallback(() => {
     setScreen("dashboard");
-    setActiveModule(primaryModule);
-  }, [primaryModule]);
+    const alreadyInstalled = completedModules.includes(primaryModule);
+    setActiveModule(alreadyInstalled ? null : primaryModule);
+  }, [primaryModule, completedModules]);
 
   if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
   if (screen === "phoneSetup") return <PhoneSetupScreen onComplete={handlePhoneSetupComplete} />;
