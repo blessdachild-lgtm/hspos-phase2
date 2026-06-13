@@ -1088,14 +1088,12 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, log);
     setSaved(true);
-    onAdvance(dayIndex);
     setShowDayClose(true);
-  }, [dayIndex, log, onLog, onAdvance, mod.id]);
+  }, [dayIndex, log, onLog, mod.id]);
 
   const handleDayCloseConfirm = useCallback(() => {
-    // Day already marked complete on submit — close screen is display only
-    // Navigation already handled by onAdvance above
-  }, []);
+    onAdvance(dayIndex);
+  }, [dayIndex, onAdvance]);
 
   const handleQuickSubmit = useCallback(() => {
     if (!quickReason || quickNote.trim().length < 5) return;
@@ -1103,9 +1101,8 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
     saveLastActivity(mod.id);
     onLog(dayIndex, quickEntry);
     setSaved(true);
-    onAdvance(dayIndex, true);
     setShowDayClose(true);
-  }, [quickReason, quickNote, dayIndex, onLog, onAdvance, mod.id]);
+  }, [quickReason, quickNote, dayIndex, onLog, mod.id]);
 
   if (showDayClose) {
     return (
@@ -1113,7 +1110,7 @@ function DayView({ mod, dayIndex, existingLog, completedDays, onLog, onBack, onA
         mod={mod}
         dayIndex={dayIndex}
         isLastDay={isLastDay}
-        onContinue={() => setShowDayClose(false)}
+        onContinue={handleDayCloseConfirm}
       />
     );
   }
@@ -2078,27 +2075,22 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const handleLog = useCallback((dayIdx, text) => {
     setLogs(prev => ({ ...prev, [dayIdx]: text }));
     saveLastActivity(moduleId);
-    // Mark day complete immediately when log is saved — not gated on close screen tap
+    // Mark day complete immediately when log is saved — not gated on close screen
     setCompletedDays(prev => {
-      if (prev.includes(dayIdx)) return prev;
+      const isNew = !prev.includes(dayIdx);
+      if (!isNew) return prev;
       const updated = [...prev, dayIdx];
-      const nextDayIndex = Math.min(updated.length, 6);
-      updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
+      // CRITICAL: Do NOT update Upstash on Day 7 (index 6)
+      // Writing dayIndex:6 causes SMS to loop on Day 7 indefinitely
+      // Day 7 completion is handled by gate pass and handleComplete
+      if (dayIdx < 6) {
+        updateUserDayIndex(loadUserPhone(), moduleId, updated.length);
+      }
       return updated;
     });
   }, [moduleId]);
 
   const handleAdvance = useCallback((dayIdx, isQuickLog = false) => {
-    setCompletedDays(prev => {
-      const isNew = !prev.includes(dayIdx);
-      const updated = isNew ? [...prev, dayIdx] : prev;
-      // Only sync day index to Upstash when genuinely completing a new day
-      if (isNew) {
-        const nextDayIndex = Math.min(updated.length, 6);
-        updateUserDayIndex(loadUserPhone(), moduleId, nextDayIndex);
-      }
-      return updated;
-    });
     if (isQuickLog) {
       const newCount = quickLogCount + 1;
       setQuickLogCount(newCount);
@@ -2164,7 +2156,16 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   if (view === "referenceCard") return <ReferenceCardScreen onBack={() => { onComplete(moduleId); onBack(); }} />;
   if (view === "retry") return <RetryScreen mod={mod} logs={logs} onBack={() => setView("overview")} />;
   if (view === "synthesis") return <SynthesisScreen mod={mod} logs={logs} onContinue={() => setView("completion")} />;
-  if (view === "gate") return <GateScreen mod={mod} logs={logs} onPass={() => { saveModuleCompletion(moduleId); setView("synthesis"); }} onRetry={() => setView("retry")} />;
+  if (view === "gate") return <GateScreen mod={mod} logs={logs} onPass={() => {
+    saveModuleCompletion(moduleId);
+    // Write next module Day 0 to Upstash immediately on gate pass
+    // This fires before synthesis/completion screens — no navigation required
+    const currentIndex = MODULES.findIndex(m => m.id === moduleId);
+    const nextModule = MODULES[currentIndex + 1];
+    const phone = loadUserPhone();
+    if (phone && nextModule) updateUserDayIndex(phone, nextModule.id, 0);
+    setView("synthesis");
+  }} onRetry={() => setView("retry")} />;
   if (currentDay !== null) return <DayView key={currentDay} mod={mod} dayIndex={currentDay} existingLog={logs[currentDay]} completedDays={completedDays} onLog={handleLog} onBack={() => setCurrentDay(null)} onAdvance={handleAdvance} quickLogCount={quickLogCount} />;
 
   return (
@@ -2354,6 +2355,11 @@ export default function HSPOSPhase2() {
   const handleComplete = useCallback((id) => {
     setCompletedModules(prev => prev.includes(id) ? prev : [...prev, id]);
     setActiveModule(null);
+    // Second guarantee: write next module Day 0 to Upstash on completion screen confirm
+    const currentIndex = MODULES.findIndex(m => m.id === id);
+    const nextModule = MODULES[currentIndex + 1];
+    const phone = loadUserPhone();
+    if (phone && nextModule) updateUserDayIndex(phone, nextModule.id, 0);
   }, []);
 
   const handleReRun = useCallback((id) => {
@@ -2369,13 +2375,14 @@ export default function HSPOSPhase2() {
       setScreen("phoneSetup");
     } else {
       setScreen("dashboard");
-      // If arriving via SMS link for an already-installed module, land on dashboard
+      // If arriving via SMS for an already-installed module, land on dashboard
       const alreadyInstalled = completedModules.includes(primaryModule);
       setActiveModule(alreadyInstalled ? null : primaryModule);
     }
   }, [primaryModule, completedModules]);
 
   const handleSelectModule = useCallback((moduleId) => {
+    // Save active module so SMS link returns to correct place
     const state = loadState() || { modules: {}, completedModules: [] };
     state.primaryModule = moduleId;
     saveState(state);
@@ -2384,9 +2391,8 @@ export default function HSPOSPhase2() {
 
   const handlePhoneSetupComplete = useCallback(() => {
     setScreen("dashboard");
-    const alreadyInstalled = completedModules.includes(primaryModule);
-    setActiveModule(alreadyInstalled ? null : primaryModule);
-  }, [primaryModule, completedModules]);
+    setActiveModule(primaryModule);
+  }, [primaryModule]);
 
   if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
   if (screen === "phoneSetup") return <PhoneSetupScreen onComplete={handlePhoneSetupComplete} />;
