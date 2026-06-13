@@ -61,9 +61,24 @@ const DAY_TITLES = {
   calibration: ["Inflation Audit", "Signal Vocabulary Installation", "Observation-Only Rep", "Live Read With Discount", "The Yellow Test", "Advance Timing Rep", "Clean Exit Test"],
 };
 
+const MODULES_ORDER = ['state', 'identity', 'decision', 'calibration'];
+
 function buildMessage(moduleId, dayIndex) {
-  const mod = moduleId || 'state';
-  const day = Math.min(dayIndex || 0, 6);
+  let mod = moduleId || 'state';
+  let day = Math.min(dayIndex || 0, 6);
+
+  // DEFENSIVE GUARD: If dayIndex is 6 (Day 7) and we still have a next module,
+  // roll SMS forward to Day 1 of the next module
+  // This catches any case where Upstash is stuck after module completion
+  if (day === 6) {
+    const currentIdx = MODULES_ORDER.indexOf(mod);
+    const nextMod = MODULES_ORDER[currentIdx + 1];
+    if (nextMod) {
+      mod = nextMod;
+      day = 0;
+    }
+  }
+
   const title = MODULE_TITLES[mod] || 'HS-POS';
   const dayTitle = DAY_TITLES[mod]?.[day] || `Day ${day + 1}`;
   const presence = PRESENCE_MESSAGES[mod]?.[day] || '';
