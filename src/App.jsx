@@ -2320,7 +2320,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 // Main App Component
 export default function HSPOSPhase2() {
   const [screen, setScreen] = useState("entry");
-  const [primaryModule] = useState(() => getModuleFromUrl());
+  const [primaryModule, setPrimaryModule] = useState(() => getModuleFromUrl());
   const [activeModule, setActiveModule] = useState(null);
   const [completedModules, setCompletedModules] = useState(() => loadCompletedModules());
   const [phoneSetupDone] = useState(() => !!loadUserPhone());
@@ -2408,13 +2408,17 @@ export default function HSPOSPhase2() {
   }, []);
 
   const handleFullReset = useCallback(() => {
-    // Wipe entire state object from localStorage — cleanest full reset
-    // Per-module reset leaves completedModules intact causing re-hydration issues
+    // Wipe entire state object from localStorage
     try {
       window.localStorage.removeItem(STORAGE_KEY);
     } catch (e) {}
+    // Clear URL params so module param isn't re-read from address bar
+    try {
+      window.history.replaceState({}, "", window.location.pathname);
+    } catch (e) {}
     setCompletedModules([]);
     setActiveModule(null);
+    setPrimaryModule("state");
     setScreen("entry");
   }, []);
 
