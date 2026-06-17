@@ -2408,8 +2408,11 @@ export default function HSPOSPhase2() {
   }, []);
 
   const handleFullReset = useCallback(() => {
-    // Wipe all progress and return to entry screen
-    MODULES.forEach(m => resetModuleProgress(m.id));
+    // Wipe entire state object from localStorage — cleanest full reset
+    // Per-module reset leaves completedModules intact causing re-hydration issues
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
     setCompletedModules([]);
     setActiveModule(null);
     setScreen("entry");
