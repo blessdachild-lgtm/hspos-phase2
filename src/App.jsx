@@ -876,7 +876,8 @@ function PhoneSetupScreen({ onComplete }) {
 }
 
 // Module Select Screen
-function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard }) {
+function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard, onFullReset }) {
+  const [confirmReset, setConfirmReset] = useState(false);
   const allComplete = MODULES.every(m => completedModules.includes(m.id));
 
   return (
@@ -1060,6 +1061,42 @@ function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard })
           )}
 
         </div>
+
+        {/* Full System Reset */}
+        <div style={{ marginTop: "60px", paddingTop: "32px", borderTop: "2px solid #252A36", textAlign: "center" }}>
+          {!confirmReset ? (
+            <div
+              onClick={() => setConfirmReset(true)}
+              style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#4A5268", cursor: "pointer", letterSpacing: "0.15em", textTransform: "uppercase", textDecoration: "underline", textDecorationStyle: "dotted" }}
+            >
+              Reset all progress
+            </div>
+          ) : (
+            <div style={{ background: "#13161D", border: "2px solid #252A36", borderLeft: "4px solid #E05252", padding: "20px 24px", textAlign: "left" }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#E05252", marginBottom: "10px" }}>
+                Full Reset
+              </div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#9BA3B5", lineHeight: 1.7, marginBottom: "20px" }}>
+                This will delete all logs, completed days, and module progress. Your phone registration stays active. This cannot be undone.
+              </div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={() => { onFullReset(); setConfirmReset(false); }}
+                  style={{ background: "#E05252", color: "#fff", border: "none", padding: "12px 24px", fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer" }}
+                >
+                  Yes, Reset Everything
+                </button>
+                <button
+                  onClick={() => setConfirmReset(false)}
+                  style={{ background: "transparent", color: "#9BA3B5", border: "2px solid #252A36", padding: "12px 24px", fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </Wrap>
     </div>
   );
@@ -2370,6 +2407,14 @@ export default function HSPOSPhase2() {
     });
   }, []);
 
+  const handleFullReset = useCallback(() => {
+    // Wipe all progress and return to entry screen
+    MODULES.forEach(m => resetModuleProgress(m.id));
+    setCompletedModules([]);
+    setActiveModule(null);
+    setScreen("entry");
+  }, []);
+
   const handleEnter = useCallback(() => {
     if (!loadUserPhone()) {
       setScreen("phoneSetup");
@@ -2414,5 +2459,5 @@ export default function HSPOSPhase2() {
     if (isInstalled) return <InstalledModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onReRun={handleReRun} />;
     return <ModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onComplete={handleComplete} />;
   }
-  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={handleSelectModule} onViewCard={() => setScreen("referenceCard")} />;
+  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={handleSelectModule} onViewCard={() => setScreen("referenceCard")} onFullReset={handleFullReset} />;
 }
