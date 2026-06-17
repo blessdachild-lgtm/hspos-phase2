@@ -2133,7 +2133,7 @@ function ModuleView({ moduleId, onBack, onComplete }) {
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.8, marginBottom: "40px", maxWidth: "480px", margin: "0 auto 40px" }}>
               The system requires continuity to install. After 21 days, patterns revert. The arc restarts from State Regulation — the foundation everything else depends on.
             </div>
-            <BtnPrimary onClick={() => { onBack(); }}>Return to Dashboard</BtnPrimary>
+            <BtnPrimary onClick={() => { resetModuleProgress(moduleId); onBack(); }}>Return to Dashboard</BtnPrimary>
           </div>
         </Wrap>
       </div>
