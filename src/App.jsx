@@ -423,6 +423,26 @@ function loadModuleCompletionDate(moduleId) {
   return state.modules[moduleId].completedAt || null;
 }
 
+// Build Phase 3 handoff URL with encoded reference card data
+function buildPhase3HandoffUrl() {
+  const cardData = {};
+  Object.entries(REFERENCE_CARD_CONFIG).forEach(([moduleId, config]) => {
+    cardData[moduleId] = loadModuleLog(moduleId, config.dayIndex) || "";
+  });
+  // Get the primary module (cluster) from state
+  const state = loadState();
+  const cluster = state?.primaryModule || "state";
+  const payload = {
+    cluster,
+    spikeSignature: cardData.state || "",
+    identityAnchor: cardData.identity || "",
+    overrideScript: cardData.decision || "",
+    signalRead: cardData.calibration || "",
+  };
+  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+  return `https://hspos-phase3.vercel.app?ref=${encoded}`;
+}
+
 function loadModuleLog(moduleId, dayIndex) {
   const state = loadState();
   if (!state || !state.modules || !state.modules[moduleId]) return "";
@@ -1026,7 +1046,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard, o
                     color: C.text,
                     marginBottom: "6px",
                   }}>
-                    Your Field Card
+                    Your Reference Card
                   </div>
                   <div style={{
                     fontFamily: "'Syne', sans-serif",
@@ -1738,7 +1758,7 @@ function ReferenceCardScreen({ onBack }) {
               HS-POS · Operating Reference
             </div>
             <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", color: C.text, lineHeight: 1.1, fontWeight: 400, marginBottom: "16px" }}>
-              Your Field Card
+              Your Reference Card
             </div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: C.muted, lineHeight: 1.7 }}>
               Built from your logs. Screenshot this and keep it accessible.
@@ -1868,6 +1888,14 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
             {isLast && onViewCard && (
               <button onClick={onViewCard} style={{ width: "100%", maxWidth: "480px", padding: "14px 24px", background: "transparent", border: `2px solid ${C.gold}`, color: C.gold, fontFamily: "'Syne', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s" }}>
                 View Your Reference Card →
+              </button>
+            )}
+            {isLast && (
+              <button
+                onClick={() => { window.open(buildPhase3HandoffUrl(), '_blank'); }}
+                style={{ width: "100%", maxWidth: "480px", padding: "16px 24px", background: C.gold, color: C.bg, border: "none", fontFamily: "'Syne', sans-serif", fontSize: "14px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}
+              >
+                Begin Phase 3 — Calibration Lab →
               </button>
             )}
           </div>
