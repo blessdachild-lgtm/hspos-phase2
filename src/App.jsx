@@ -292,6 +292,37 @@ function getModuleFromUrl() {
   return "state";
 }
 
+function ensureJourneyState() {
+  const state = loadState() || { modules: {}, completedModules: [] };
+  const params = new URLSearchParams(window.location.search);
+  const urlModule = params.get("module");
+  const assignedFromUrl = VALID_MODULES.includes(urlModule) ? urlModule : null;
+  const savedPrimary = VALID_MODULES.includes(state.diagnostic?.primaryModule) ? state.diagnostic.primaryModule : null;
+  const legacyPrimary = VALID_MODULES.includes(state.primaryModule) ? state.primaryModule : null;
+  const primaryModule = assignedFromUrl || savedPrimary || legacyPrimary || "state";
+  const assignedModules = assignedFromUrl
+    ? [assignedFromUrl]
+    : Array.isArray(state.diagnostic?.assignedModules) && state.diagnostic.assignedModules.length
+      ? state.diagnostic.assignedModules.filter(id => VALID_MODULES.includes(id))
+      : [primaryModule];
+  const migrated = {
+    ...state,
+    schemaVersion: 2,
+    modules: state.modules || {},
+    completedModules: Array.isArray(state.completedModules) ? state.completedModules : [],
+    diagnostic: { ...(state.diagnostic || {}), primaryModule, assignedModules, source: state.diagnostic?.source || (assignedFromUrl ? "phase1" : "legacy") },
+    navigation: { ...(state.navigation || {}), activeModule: primaryModule, lastVisitedModule: state.navigation?.lastVisitedModule || primaryModule },
+    primaryModule,
+  };
+  saveState(migrated);
+  return migrated;
+}
+
+function getAssignedPrimaryModule() {
+  const state = loadState();
+  return state?.diagnostic?.primaryModule || state?.primaryModule || "state";
+}
+
 function loadState() {
   try {
     const raw = typeof window !== "undefined" && window.localStorage
@@ -424,20 +455,28 @@ function loadModuleCompletionDate(moduleId) {
 }
 
 // Build Phase 3 handoff URL with encoded reference card data
-function buildPhase3HandoffUrl() {
+function buildPhase3HandoffUrl(currentModule = null) {
   const cardData = {};
   Object.entries(REFERENCE_CARD_CONFIG).forEach(([moduleId, config]) => {
     cardData[moduleId] = loadModuleLog(moduleId, config.dayIndex) || "";
   });
   // Get the primary module (cluster) from state
   const state = loadState();
-  const cluster = state?.primaryModule || "state";
+  const cluster = state?.diagnostic?.primaryModule || state?.primaryModule || "state";
+  const assignedModules = state?.diagnostic?.assignedModules || [cluster];
+  const completedModules = [...new Set([
+    ...(state?.completedModules || []),
+    ...(currentModule ? [currentModule] : []),
+  ])].filter(id => assignedModules.includes(id));
   const payload = {
+    version: 2,
     cluster,
-    spikeSignature: cardData.state || "",
-    identityAnchor: cardData.identity || "",
-    overrideScript: cardData.decision || "",
-    signalRead: cardData.calibration || "",
+    assignedModules,
+    completedModules,
+    spikeSignature: assignedModules.includes("state") ? cardData.state || "" : "",
+    identityAnchor: assignedModules.includes("identity") ? cardData.identity || "" : "",
+    overrideScript: assignedModules.includes("decision") ? cardData.decision || "" : "",
+    signalRead: assignedModules.includes("calibration") ? cardData.calibration || "" : "",
   };
   const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
   return `https://hspos-phase3.vercel.app?ref=${encoded}`;
@@ -793,7 +832,7 @@ function PhoneSetupScreen({ onComplete }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumber: e164,
-          moduleId: loadState()?.primaryModule || "state",
+          moduleId: getAssignedPrimaryModule(),
           frequency,
         }),
       });
@@ -896,9 +935,9 @@ function PhoneSetupScreen({ onComplete }) {
 }
 
 // Module Select Screen
-function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard, onFullReset }) {
+function ModuleSelect({ primaryModule, assignedModules, onSelect, completedModules, onViewCard, onFullReset }) {
   const [confirmReset, setConfirmReset] = useState(false);
-  const allComplete = MODULES.every(m => completedModules.includes(m.id));
+  const allComplete = assignedModules.every(id => completedModules.includes(id));
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
@@ -924,12 +963,13 @@ function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard, o
             paddingBottom: "32px", 
             borderBottom: `2px solid ${C.border}` 
           }}>
-            Modules unlock sequentially. Each one builds on the last. The architecture starts at State because everything downstream depends on it.
+            Your diagnostic assigned the correction arc below. Modules that were not assigned are shown for context and are not required for completion.
           </div>
           {MODULES.map((mod, i) => {
             const done = completedModules.includes(mod.id);
-            const unlocked = i === 0 || completedModules.includes(MODULES[i - 1].id) || mod.id === primaryModule;
-            const active = unlocked && !done;
+            const assigned = assignedModules.includes(mod.id);
+            const unlocked = assigned;
+            const active = assigned && !done;
             const primary = mod.id === primaryModule;
             return (
               <div 
@@ -996,7 +1036,7 @@ function ModuleSelect({ primaryModule, onSelect, completedModules, onViewCard, o
                       letterSpacing: "0.15em", 
                       marginTop: "4px" 
                     }}>
-                      {done ? "INSTALLED" : unlocked ? "7 DAYS · 3 PHASES" : `LOCKED — Complete Module ${i} first`}
+                      {done ? "INSTALLED" : assigned ? "ASSIGNED · 7 DAYS · 3 PHASES" : "NOT ASSIGNED"}
                     </div>
                   </div>
                 </div>
@@ -1605,7 +1645,7 @@ function GateScreen({ mod, logs, onPass, onRetry }) {
 }
 
 // Synthesis Screen
-function SynthesisScreen({ mod, logs, onContinue }) {
+function SynthesisScreen({ mod, logs, onContinue, journeyComplete }) {
   const config = SYNTHESIS_CONFIG[mod.id];
   const keyLog = logs?.[config.keyDayIndex] || "";
   const day1Log = logs?.[0] || "";
@@ -1698,7 +1738,9 @@ function SynthesisScreen({ mod, logs, onContinue }) {
               {config.installedCapability}
             </div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#A8B4C8", lineHeight: 1.8, borderTop: `1px solid ${C.border}`, paddingTop: "18px" }}>
-              {config.verdictStatement}
+              {journeyComplete
+                ? `You completed the ${mod.title} correction arc assigned by your diagnostic. The work you logged is now your operating reference.`
+                : config.verdictStatement}
             </div>
           </div>
 
@@ -1709,7 +1751,9 @@ function SynthesisScreen({ mod, logs, onContinue }) {
           {/* Direction */}
           <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${C.gold}`, padding: "24px 28px", marginBottom: "40px" }}>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.gold, marginBottom: "14px" }}>Next</div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, lineHeight: 1.7, fontWeight: 500 }}>{config.direction}</div>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.text, lineHeight: 1.7, fontWeight: 500 }}>
+              {journeyComplete ? "Your assigned correction arc is installed. From here, the work is maintenance and application." : config.direction}
+            </div>
           </div>
 
           <BtnPrimary onClick={onContinue} full>Mark Module {mod.number} Installed →</BtnPrimary>
@@ -1720,19 +1764,21 @@ function SynthesisScreen({ mod, logs, onContinue }) {
 }
 
 // Reference Card Screen
-function ReferenceCardScreen({ onBack }) {
+function ReferenceCardScreen({ onBack, assignedModules = null }) {
   const [copied, setCopied] = useState(false);
-  const cardData = Object.entries(REFERENCE_CARD_CONFIG).map(([moduleId, config]) => ({
+  const assigned = assignedModules || loadState()?.diagnostic?.assignedModules || VALID_MODULES;
+  const cardData = Object.entries(REFERENCE_CARD_CONFIG)
+    .filter(([moduleId]) => assigned.includes(moduleId))
+    .map(([moduleId, config]) => ({
     moduleId, ...config,
     log: loadModuleLog(moduleId, config.dayIndex),
-  }));
+    }));
 
   const handleCopy = () => {
     const text = [
       "HS-POS OPERATING REFERENCE — 100 Acrez Holdings, LLC",
       "",
-      "MIRP REFLEX: NOTICE → DOWNSHIFT → ANCHOR → MOVE",
-      "",
+      ...(assigned.includes("state") ? ["MIRP REFLEX: NOTICE → DOWNSHIFT → ANCHOR → MOVE", ""] : []),
       ...cardData.map(d => `${d.label.toUpperCase()}\n${d.description}\n${d.log || "(not recorded)"}\n`),
       "OPERATING LOOP:",
       "Assess → Regulate → Decide → Enter → Build → Calibrate → Advance or Exit → Review → Update",
@@ -1766,14 +1812,14 @@ function ReferenceCardScreen({ onBack }) {
           </div>
 
           {/* MIRP Reflex */}
-          <div style={{ background: C.surface, border: `2px solid ${C.gold}`, padding: "20px 24px", marginBottom: "20px", textAlign: "center" }}>
+          {assigned.includes("state") && <div style={{ background: C.surface, border: `2px solid ${C.gold}`, padding: "20px 24px", marginBottom: "20px", textAlign: "center" }}>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", color: C.gold, marginBottom: "12px" }}>
               MIRP Reflex — Fire When Spike Detected
             </div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "18px", fontWeight: 700, color: C.text, letterSpacing: "0.05em" }}>
               NOTICE → DOWNSHIFT → ANCHOR → MOVE
             </div>
-          </div>
+          </div>}
 
           {/* Four log-based fields */}
           {cardData.map((d) => (
@@ -1823,10 +1869,11 @@ function ReferenceCardScreen({ onBack }) {
 }
 
 // Completion Screen
-function CompletionScreen({ mod, onContinue, onViewCard }) {
-  const nextMod = MODULES[MODULES.findIndex(m => m.id === mod.id) + 1];
+function CompletionScreen({ mod, onContinue, onViewCard, journeyComplete, assignedModules }) {
+  const currentIndex = MODULES.findIndex(m => m.id === mod.id);
+  const nextMod = MODULES.slice(currentIndex + 1).find(candidate => assignedModules.includes(candidate.id));
   const completedAt = loadModuleCompletionDate(mod.id);
-  const isLast = !nextMod;
+  const isLast = journeyComplete;
 
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: C.bg }}>
@@ -1835,7 +1882,7 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
             <div style={{ width: "72px", height: "72px", borderRadius: "50%", margin: "0 auto 28px", background: mod.colorDim, border: `3px solid ${mod.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", color: mod.color }}>✓</div>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "0.25em", textTransform: "uppercase", color: C.done, marginBottom: "8px" }}>
-              {isLast ? "System Complete" : `Module ${mod.number} Installed`}
+              {isLast ? "Assigned Arc Complete" : `Module ${mod.number} Installed`}
             </div>
             {completedAt && (
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: C.dim, marginBottom: "20px" }}>
@@ -1845,17 +1892,17 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
           </div>
 
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(36px, 5vw, 52px)", color: C.text, marginBottom: "20px", lineHeight: 1.1, fontWeight: 400, textAlign: "center" }}>
-            {isLast ? "The Operating Loop is Installed." : `${mod.title} — Installed`}
+            {`${mod.title} — Installed`}
           </div>
 
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", color: C.muted, lineHeight: 1.8, textAlign: "center", maxWidth: "480px", margin: "0 auto 40px" }}>
             {isLast
-              ? "Four modules. Four engines. The system is no longer something you're building — it's something you run."
+              ? "Your diagnostic-assigned correction arc is complete. The system now carries this work forward as your operating reference."
               : `${mod.title} is no longer a concept you understand. It's a pattern you've demonstrated under real conditions.`}
           </div>
 
           {/* Next unlock — only when not last */}
-          {nextMod && (
+          {nextMod && !journeyComplete && (
             <div style={{ background: C.surface, border: `2px solid ${C.border}`, borderLeft: `4px solid ${nextMod.color}`, padding: "22px 26px", marginBottom: "40px" }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", letterSpacing: "0.2em", textTransform: "uppercase", color: nextMod.color, marginBottom: "10px" }}>
                 Now Unlocked
@@ -1876,7 +1923,7 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
                 HS-POS · Full System
               </div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "15px", color: "#A8B4C8", lineHeight: 1.8 }}>
-                State Regulation → Identity & Foundation → Decision Engine → Signal Calibration. All four engines installed. Re-run the diagnostic in 30 days. The system grows with you.
+                {mod.title} is installed. Re-run the diagnostic in 30 days to determine whether your priority has shifted.
               </div>
             </div>
           )}
@@ -1892,7 +1939,7 @@ function CompletionScreen({ mod, onContinue, onViewCard }) {
             )}
             {isLast && (
               <button
-                onClick={() => { window.open(buildPhase3HandoffUrl(), '_blank'); }}
+                onClick={() => { window.open(buildPhase3HandoffUrl(mod.id), '_blank'); }}
                 style={{ width: "100%", maxWidth: "480px", padding: "16px 24px", background: C.gold, color: C.bg, border: "none", fontFamily: "'Syne', sans-serif", fontSize: "14px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}
               >
                 Begin Phase 3 — Calibration Lab →
@@ -2117,7 +2164,7 @@ function InstalledModuleView({ moduleId, onBack, onReRun }) {
 }
 
 // Module View (Active Module)
-function ModuleView({ moduleId, onBack, onComplete }) {
+function ModuleView({ moduleId, onBack, onComplete, assignedModules, completedModules }) {
   const mod = MODULES.find(m => m.id === moduleId);
   const initial = loadModuleProgress(moduleId);
   const [currentDay, setCurrentDay] = useState(null);
@@ -2208,19 +2255,22 @@ function ModuleView({ moduleId, onBack, onComplete }) {
   const allDaysComplete = [0,1,2,3,4,5,6].every(i => completedDays.includes(i));
   const allLogsPresent = [0,1,2,3,4,5,6].every(i => logs[i] && logs[i].trim().length > 0);
   const gateReady = allDaysComplete && allLogsPresent;
+  const journeyComplete = assignedModules.every(id => id === moduleId || completedModules.includes(id));
 
   if (view === "completion") return (
     <CompletionScreen
       mod={mod}
+      assignedModules={assignedModules}
       onContinue={() => { onComplete(moduleId); onBack(); }}
-      onViewCard={!MODULES[MODULES.findIndex(m => m.id === moduleId) + 1]
+      journeyComplete={journeyComplete}
+      onViewCard={journeyComplete
         ? () => setView("referenceCard")
         : undefined}
     />
   );
-  if (view === "referenceCard") return <ReferenceCardScreen onBack={() => { onComplete(moduleId); onBack(); }} />;
+  if (view === "referenceCard") return <ReferenceCardScreen assignedModules={assignedModules} onBack={() => { onComplete(moduleId); onBack(); }} />;
   if (view === "retry") return <RetryScreen mod={mod} logs={logs} onBack={() => setView("overview")} />;
-  if (view === "synthesis") return <SynthesisScreen mod={mod} logs={logs} onContinue={() => setView("completion")} />;
+  if (view === "synthesis") return <SynthesisScreen mod={mod} logs={logs} journeyComplete={journeyComplete} onContinue={() => setView("completion")} />;
   if (view === "gate") return <GateScreen mod={mod} logs={logs} onPass={() => {
     saveModuleCompletion(moduleId);
     // Write next module Day 0 to Upstash immediately on gate pass
@@ -2347,8 +2397,10 @@ function ModuleView({ moduleId, onBack, onComplete }) {
 
 // Main App Component
 export default function HSPOSPhase2() {
+  const [journey] = useState(() => ensureJourneyState());
   const [screen, setScreen] = useState("entry");
-  const [primaryModule, setPrimaryModule] = useState(() => getModuleFromUrl());
+  const [primaryModule, setPrimaryModule] = useState(() => journey.diagnostic.primaryModule);
+  const [assignedModules, setAssignedModules] = useState(() => journey.diagnostic.assignedModules);
   const [activeModule, setActiveModule] = useState(null);
   const [completedModules, setCompletedModules] = useState(() => loadCompletedModules());
   const [phoneSetupDone] = useState(() => !!loadUserPhone());
@@ -2447,6 +2499,7 @@ export default function HSPOSPhase2() {
     setCompletedModules([]);
     setActiveModule(null);
     setPrimaryModule("state");
+    setAssignedModules(["state"]);
     setScreen("entry");
   }, []);
 
@@ -2455,44 +2508,36 @@ export default function HSPOSPhase2() {
       setScreen("phoneSetup");
     } else {
       setScreen("dashboard");
-      // Gate bypass prevention: only open a module from SMS/URL if the previous
-      // module is already completed. Otherwise land on dashboard.
-      const moduleIndex = MODULES.findIndex(m => m.id === primaryModule);
-      const previousModule = MODULES[moduleIndex - 1];
-      const previousComplete = !previousModule || completedModules.includes(previousModule.id);
       const alreadyInstalled = completedModules.includes(primaryModule);
-      if (previousComplete && !alreadyInstalled) {
+      if (assignedModules.includes(primaryModule) && !alreadyInstalled) {
         setActiveModule(primaryModule);
       } else {
         setActiveModule(null);
       }
     }
-  }, [primaryModule, completedModules]);
+  }, [primaryModule, assignedModules, completedModules]);
 
   const handleSelectModule = useCallback((moduleId) => {
-    // Save active module so SMS link returns to correct place
+    if (!assignedModules.includes(moduleId)) return;
     const state = loadState() || { modules: {}, completedModules: [] };
-    state.primaryModule = moduleId;
+    state.navigation = { ...(state.navigation || {}), activeModule: moduleId, lastVisitedModule: moduleId };
     saveState(state);
     setActiveModule(moduleId);
-  }, []);
+  }, [assignedModules]);
 
   const handlePhoneSetupComplete = useCallback(() => {
     setScreen("dashboard");
-    const moduleIndex = MODULES.findIndex(m => m.id === primaryModule);
-    const previousModule = MODULES[moduleIndex - 1];
-    const previousComplete = !previousModule || completedModules.includes(previousModule.id);
     const alreadyInstalled = completedModules.includes(primaryModule);
-    setActiveModule(previousComplete && !alreadyInstalled ? primaryModule : null);
-  }, [primaryModule, completedModules]);
+    setActiveModule(assignedModules.includes(primaryModule) && !alreadyInstalled ? primaryModule : null);
+  }, [primaryModule, assignedModules, completedModules]);
 
   if (screen === "entry") return <EntryScreen onEnter={handleEnter} />;
   if (screen === "phoneSetup") return <PhoneSetupScreen onComplete={handlePhoneSetupComplete} />;
-  if (screen === "referenceCard") return <ReferenceCardScreen onBack={() => setScreen("dashboard")} />;
+  if (screen === "referenceCard") return <ReferenceCardScreen assignedModules={assignedModules} onBack={() => setScreen("dashboard")} />;
   if (activeModule) {
     const isInstalled = completedModules.includes(activeModule);
     if (isInstalled) return <InstalledModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onReRun={handleReRun} />;
-    return <ModuleView moduleId={activeModule} onBack={() => setActiveModule(null)} onComplete={handleComplete} />;
+    return <ModuleView moduleId={activeModule} assignedModules={assignedModules} completedModules={completedModules} onBack={() => setActiveModule(null)} onComplete={handleComplete} />;
   }
-  return <ModuleSelect primaryModule={primaryModule} completedModules={completedModules} onSelect={handleSelectModule} onViewCard={() => setScreen("referenceCard")} onFullReset={handleFullReset} />;
+  return <ModuleSelect primaryModule={primaryModule} assignedModules={assignedModules} completedModules={completedModules} onSelect={handleSelectModule} onViewCard={() => setScreen("referenceCard")} onFullReset={handleFullReset} />;
 }
